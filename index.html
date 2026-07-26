@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TLS Initiatives Summary</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-512.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="theme-color" content="#14532d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TLS Initiatives">
+<style>
+  :root{
+    --ink:#1c2b26;
+    --ink-soft:#5a6b64;
+    --paper:#f5f4ef;
+    --card:#ffffff;
+    --line:#e2e1d9;
+    --green:#1f6f43;
+    --green-deep:#14532d;
+    --gold:#b8860b;
+    --gold-bg:#fdf3d7;
+    --ok:#1f6f43;
+    --ok-bg:#e3f1e8;
+    --warn:#c05d0e;
+    --warn-bg:#fdeadb;
+    --flag:#b91c1c;
+    --flag-bg:#fbe3e3;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper);color:var(--ink);
+    padding-bottom:110px;
+  }
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:var(--green-deep);color:#fff;
+    padding:12px 16px 10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.18);
+  }
+  .new-report-btn{
+    position:absolute;top:10px;right:14px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;
+    border-radius:20px;padding:5px 10px;font-size:.68rem;font-weight:700;cursor:pointer;
+  }
+  header h1{font-size:1rem;font-weight:700;letter-spacing:.02em;padding-right:70px}
+  header .sub{font-size:.72rem;opacity:.75;margin-top:2px}
+  .progress-wrap{margin-top:8px;display:flex;align-items:center;gap:10px}
+  .progress-bar{flex:1;height:6px;background:rgba(255,255,255,.22);border-radius:3px;overflow:hidden}
+  .progress-fill{height:100%;width:0%;background:#facc15;border-radius:3px;transition:width .3s}
+  .progress-num{font-size:.72rem;font-variant-numeric:tabular-nums;opacity:.9;white-space:nowrap}
+  /* ---------- layout ---------- */
+  main{max-width:640px;margin:0 auto;padding:16px 14px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin-bottom:14px;
+  }
+  .card h2{font-size:1.05rem;font-weight:800;letter-spacing:.01em;display:flex;align-items:center;gap:8px}
+  .hint{font-size:.78rem;color:var(--ink-soft);margin-top:4px;line-height:1.45}
+  label.field{display:block;font-size:.75rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 5px}
+  input[type=text],input[type=date],input[type=email],textarea{
+    width:100%;border:1.5px solid var(--line);border-radius:10px;background:#fff;
+    padding:11px 12px;font-size:1rem;font-family:inherit;color:var(--ink);
+  }
+  input:focus,textarea:focus{outline:none;border-color:var(--green)}
+  textarea{resize:vertical;min-height:74px;line-height:1.45}
+  /* chips (store format, reason-for-visit, yes/no-as-chips reveal groups) */
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+  .chip{
+    border:1.5px solid var(--line);border-radius:10px;background:#fff;
+    padding:11px 8px;font-size:.9rem;font-weight:600;color:var(--ink);text-align:center;cursor:pointer;
+  }
+  .chip.sel{background:var(--green);border-color:var(--green);color:#fff}
+  .chip.sel[data-v="No"]{background:var(--warn);border-color:var(--warn)}
+  /* ---------- section nav (initiatives) ---------- */
+  .dept-head{
+    background:var(--green-deep);color:#fff;border-radius:var(--radius);
+    padding:13px 16px;margin:20px 0 10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+    user-select:none;
+  }
+  .dept-head h2{font-size:1rem;font-weight:800;letter-spacing:.03em}
+  .dept-head .count{font-size:.72rem;background:rgba(255,255,255,.16);border-radius:20px;padding:3px 10px;font-variant-numeric:tabular-nums}
+  .dept-head .caret{margin-left:10px;transition:transform .2s}
+  .dept-head.open .caret{transform:rotate(180deg)}
+  .dept-body{display:none}
+  .dept-body.open{display:block}
+  .subsec{font-size:.85rem;font-weight:800;color:var(--green-deep);margin:16px 4px 8px;display:flex;align-items:center;gap:6px}
+  /* ---------- question ---------- */
+  .q{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px 13px 12px;margin-bottom:9px}
+  .q p{font-size:.92rem;line-height:1.4;font-weight:500}
+  /* yes/no toggle */
+  .yn{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:10px}
+  .yn button{
+    border:1.5px solid var(--line);border-radius:10px;background:#fff;
+    padding:9px 0 7px;font-size:1.15rem;cursor:pointer;line-height:1;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+  }
+  .yn button small{font-size:.56rem;font-weight:700;letter-spacing:.03em;color:var(--ink-soft);text-transform:uppercase}
+  .yn button.sel small{color:inherit}
+  .yn button.sel[data-r="Yes"]{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+  .yn button.sel[data-r="No"]{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+  /* conditional reveal (why-textarea / focus-store dates) */
+  .reveal{margin-top:9px;display:none}
+  .reveal.show{display:block}
+  .reveal textarea{min-height:58px;font-size:.9rem}
+  .reveal .nl{font-size:.68rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;display:flex;justify-content:space-between}
+  .reveal .req{color:var(--flag)}
+  .reveal label.field{margin-top:10px}
+  .reveal label.field:first-child{margin-top:0}
+  .photo-btn{margin-top:8px;background:none;border:1px dashed var(--green);border-radius:8px;font-size:.75rem;font-weight:700;color:var(--green);cursor:pointer;padding:8px 12px;width:100%}
+  .photo-strip{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .photo-thumb{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .photo-thumb .rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:.7rem;line-height:20px;padding:0;cursor:pointer}
+  .share-photos-btn{background:#fff;border:1.5px solid var(--green);color:var(--green);border-radius:12px;padding:12px 10px;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap}
+  /* ---------- footer bar ---------- */
+  .footbar{
+    position:fixed;bottom:0;left:0;right:0;z-index:60;
+    background:#fff;border-top:1px solid var(--line);
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  }
+  .footbar-inner{max-width:640px;margin:0 auto;display:flex;gap:10px;align-items:center}
+  .attn-pill{font-size:.72rem;font-weight:700;color:var(--ink-soft);white-space:nowrap}
+  .attn-pill b{color:var(--warn)}
+  .submit-btn{
+    flex:1;background:var(--green-deep);color:#fff;border:none;border-radius:12px;
+    padding:14px;font-size:1rem;font-weight:800;letter-spacing:.02em;cursor:pointer;
+  }
+  .submit-btn:active{transform:scale(.985)}
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:90px;transform:translateX(-50%);
+    background:var(--ink);color:#fff;font-size:.85rem;padding:10px 18px;border-radius:24px;
+    opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;max-width:88%;text-align:center;
+  }
+  .toast.show{opacity:1}
+  /* confirmation modal */
+  .confirm-overlay{position:fixed;inset:0;background:rgba(15,30,20,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
+  .confirm-overlay.show{display:flex}
+  .confirm-card{background:#fff;border-radius:16px;padding:26px 22px 20px;max-width:360px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .confirm-icon{font-size:2.2rem;margin-bottom:8px}
+  .confirm-card h3{font-size:1.05rem;font-weight:800;color:var(--green-deep);margin-bottom:8px}
+  .confirm-card p{font-size:.88rem;line-height:1.5;color:var(--ink-soft)}
+  .confirm-ok{margin-top:18px;width:100%;background:var(--green-deep);color:#fff;border:none;border-radius:10px;padding:12px;font-size:.92rem;font-weight:800;cursor:pointer}
+</style>
+<script data-goatcounter="https://hderek22.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<header>
+  <button class="new-report-btn" id="newReportBtn" type="button">↺ New</button>
+  <h1>TLS Initiatives Summary</h1>
+  <div class="sub">Grocery Inventory Reduction • Ground Beef Markdown • Cut Fruit</div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
+    <div class="progress-num" id="pnum">0 / 0</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ COVER ============ -->
+  <div class="card" id="cover">
+    <h2>🏪 Visit Cover Page</h2>
+    <p class="hint">Fill this out first. Cover your summary with the Store Manager, PIC, and Dept. Heads before you leave.</p>
+
+    <label class="field">Store Format</label>
+    <div class="chips" id="fmtChips">
+      <button class="chip" data-v="Conventional">Conventional</button>
+      <button class="chip" data-v="Cost Plus">Cost Plus</button>
+      <button class="chip" data-v="SAL">SAL</button>
+      <button class="chip" data-v="Food Saver">Food Saver</button>
+    </div>
+
+    <label class="field" for="storeNum">HFG Store Number</label>
+    <input type="text" id="storeNum" inputmode="numeric" placeholder="e.g. 118">
+
+    <label class="field" for="regionNum">Region Number</label>
+    <input type="text" id="regionNum" inputmode="numeric" placeholder="e.g. 4">
+
+    <label class="field" for="mgrName">Store Manager Name</label>
+    <input type="text" id="mgrName" placeholder="Store manager">
+
+    <label class="field" for="tlsName">TLS Name</label>
+    <input type="text" id="tlsName" placeholder="Your name">
+
+    <label class="field" for="visitDate">Date of Visit</label>
+    <input type="date" id="visitDate">
+  </div>
+
+  <!-- ============ REASON FOR VISIT ============ -->
+  <div class="card" id="reasonCard">
+    <h2>🎯 Reason for Visit</h2>
+    <p class="hint">For each initiative, mark whether this is a routine follow-up or the store is a current focus store.</p>
+    <div id="reasonRows"></div>
+  </div>
+
+  <!-- initiative sections injected here -->
+  <div id="initiatives"></div>
+
+  <!-- ============ VISIT SUMMARY ============ -->
+  <div class="card">
+    <h2>🗣 Visit Summary</h2>
+    <p class="hint">Always cover with the Store Manager / PIC before leaving.</p>
+    <label class="field" for="bestPractices">Best Practices Observed — what is this management team doing well?</label>
+    <textarea id="bestPractices" placeholder="Wins worth recognizing…"></textarea>
+    <label class="field" for="opportunities">Opportunities for Improvement</label>
+    <textarea id="opportunities" placeholder="Key follow-ups and coaching points…"></textarea>
+  </div>
+
+  <!-- ============ SEND ============ -->
+  <div class="card">
+    <h2>📧 Send Completed Summary</h2>
+    <p class="hint">This opens the summary in your email app — you'll still need to tap Send there to deliver it.</p>
+    <label class="field" for="recipients">Recipients</label>
+    <input type="email" id="recipients" multiple value="DOusley@houchens.com, MMooney@houchens.com" placeholder="name@houchens.com, name@houchens.com">
+  </div>
+
+</main>
+
+<div class="footbar">
+  <div class="footbar-inner">
+    <div class="attn-pill" id="attnPill"></div>
+    <button class="share-photos-btn" id="sharePhotosBtn" style="display:none" title="Share attached photos">📷 0</button>
+    <button class="submit-btn" id="submitBtn">Submit Visit Report</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-card">
+    <div class="confirm-icon">📬</div>
+    <h3>Report Ready in Mail</h3>
+    <p id="confirmMsg"></p>
+    <button class="confirm-ok" id="confirmOk">Got it</button>
+  </div>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const INITIATIVES = [
+  { id:"grocery", name:"GROCERY INVENTORY REDUCTION", label:"Grocery Inventory Reduction", hasFocusStore:true,
+    structured:[
+      {id:"backroomLevel", section:"Backroom Conditions", text:"Is the Overall Backroom Inventory at an acceptable level?"},
+      {id:"backroomOrg", section:"Backroom Conditions", text:"Is Backroom Inventory neat and organized by overstock, backstock, and DSD?"}
+    ]
+  },
+  { id:"groundbeef", name:"GROUND BEEF MARKDOWN", label:"Ground Beef Markdown", hasFocusStore:false, structured:[] },
+  { id:"cutfruit", name:"CUT FRUIT", label:"Cut Fruit", hasFocusStore:false, structured:[] }
+];
+
+/* ================= STATE ================= */
+const answers = {};   // qid -> {rating, note, photos}
+const reason = {};    // initiative id -> "Follow Up" | "Focus"
+let totalQ = 0;
+let storeFormat = "";
+
+function cssId(qid){ return qid.replace(/\./g,"-"); }
+
+/* ================= BUILD: REASON FOR VISIT ================= */
+const reasonRowsEl = document.getElementById("reasonRows");
+INITIATIVES.forEach(init => {
+  totalQ++;
+  const row = document.createElement("div");
+  row.innerHTML = `
+    <label class="field">${init.label}</label>
+    <div class="chips reason-chips" data-reason="${init.id}">
+      <button class="chip" data-v="Follow Up">Follow Up</button>
+      <button class="chip" data-v="Focus">Focus</button>
+    </div>`;
+  reasonRowsEl.appendChild(row);
+});
+document.querySelectorAll(".reason-chips").forEach(row => {
+  row.addEventListener("click", e => {
+    const c = e.target.closest(".chip"); if(!c) return;
+    const id = row.dataset.reason;
+    row.querySelectorAll(".chip").forEach(x=>x.classList.remove("sel"));
+    if (reason[id] === c.dataset.v){ delete reason[id]; }
+    else { c.classList.add("sel"); reason[id] = c.dataset.v; }
+    refresh();
+    scheduleSave();
+  });
+});
+
+/* ================= BUILD: INITIATIVE SECTIONS ================= */
+const initEl = document.getElementById("initiatives");
+INITIATIVES.forEach((init, ii) => {
+  const initTotal = (init.hasFocusStore?1:0) + init.structured.length;
+
+  const head = document.createElement("div");
+  head.className = "dept-head" + (ii===0 ? " open" : "");
+  head.innerHTML = `<h2>${init.name}</h2><span style="display:flex;align-items:center">${initTotal ? `<span class="count" id="cnt-${init.id}"></span>` : ""}<span class="caret">▾</span></span>`;
+  const body = document.createElement("div");
+  body.className = "dept-body" + (ii===0 ? " open" : "");
+  head.addEventListener("click", () => { head.classList.toggle("open"); body.classList.toggle("open"); });
+
+  if (init.hasFocusStore){
+    totalQ++;
+    const qid = `${init.id}.focusStore`;
+    const q = document.createElement("div");
+    q.className = "q";
+    q.innerHTML = `
+      <p>Is this currently a focus store?</p>
+      <div class="yn" data-qid="${qid}">
+        <button data-r="Yes"><span>✅</span><small>Yes</small></button>
+        <button data-r="No"><span>⚠️</span><small>No</small></button>
+      </div>
+      <div class="reveal" id="reveal-${cssId(qid)}">
+        <label class="field" for="start-${init.id}">Initial Start Date</label>
+        <input type="date" id="start-${init.id}">
+        <label class="field" for="deadline-${init.id}">Deadline for Completion</label>
+        <input type="date" id="deadline-${init.id}">
+      </div>`;
+    body.appendChild(q);
+  }
+
+  let lastSection = null;
+  init.structured.forEach(s => {
+    if (s.section !== lastSection){
+      const sh = document.createElement("div");
+      sh.className = "subsec";
+      sh.textContent = s.section;
+      body.appendChild(sh);
+      lastSection = s.section;
+    }
+    totalQ++;
+    const qid = `${init.id}.${s.id}`;
+    const q = document.createElement("div");
+    q.className = "q";
+    q.innerHTML = `
+      <p>${s.text}</p>
+      <div class="yn" data-qid="${qid}">
+        <button data-r="Yes"><span>✅</span><small>Yes</small></button>
+        <button data-r="No"><span>⚠️</span><small>No</small></button>
+      </div>
+      <div class="reveal" id="reveal-${cssId(qid)}">
+        <div class="nl"><span>If not, why?</span><span class="req" id="req-${cssId(qid)}" style="display:none">Required</span></div>
+        <textarea data-qid="${qid}" placeholder="What did you observe?"></textarea>
+      </div>`;
+    body.appendChild(q);
+  });
+
+  const obsSec = document.createElement("div");
+  obsSec.className = "subsec";
+  obsSec.textContent = "Observations";
+  body.appendChild(obsSec);
+  const obsQid = `${init.id}.obs`;
+  const obsQ = document.createElement("div");
+  obsQ.className = "q";
+  obsQ.innerHTML = `
+    <textarea data-qid="${obsQid}" placeholder="Notes on what you observed for this initiative…"></textarea>
+    <button class="photo-btn" data-qid="${obsQid}">📷 Add photos</button>
+    <input type="file" accept="image/*" multiple hidden id="file-${cssId(obsQid)}" data-qid="${obsQid}">
+    <div class="photo-strip" id="strip-${cssId(obsQid)}"></div>`;
+  body.appendChild(obsQ);
+
+  initEl.appendChild(head);
+  initEl.appendChild(body);
+});
+
+/* ================= YES/NO BUTTONS ================= */
+function updateReveal(qid, r){
+  const rev = document.getElementById("reveal-"+cssId(qid));
+  if (!rev) return;
+  const show = qid.endsWith(".focusStore") ? r === "Yes" : r === "No";
+  rev.classList.toggle("show", show);
+  syncWhyFlag(qid);
+}
+function syncWhyFlag(qid){
+  const req = document.getElementById("req-"+cssId(qid));
+  if (!req) return;
+  const a = answers[qid];
+  const needs = a && a.rating === "No" && !(a.note && a.note.length);
+  req.style.display = needs ? "inline" : "none";
+}
+document.querySelectorAll(".yn").forEach(row => {
+  row.addEventListener("click", e => {
+    const btn = e.target.closest("button"); if(!btn) return;
+    const qid = row.dataset.qid;
+    const r = btn.dataset.r;
+    const cur = answers[qid]?.rating;
+    const next = (cur === r) ? null : r;
+    row.querySelectorAll("button").forEach(b=>b.classList.remove("sel"));
+    if (next === null){
+      delete answers[qid];
+    } else {
+      btn.classList.add("sel");
+      answers[qid] = answers[qid] || {};
+      answers[qid].rating = next;
+    }
+    updateReveal(qid, next);
+    refresh();
+    scheduleSave();
+  });
+});
+
+/* note / observation textareas (why-textareas + observations both use data-qid) */
+document.querySelectorAll('.q textarea[data-qid]').forEach(ta => {
+  ta.addEventListener("input", () => {
+    const qid = ta.dataset.qid;
+    answers[qid] = answers[qid] || {};
+    answers[qid].note = ta.value.trim();
+    syncWhyFlag(qid);
+    scheduleSave();
+  });
+});
+
+/* ================= PHOTO ATTACHMENTS (observations) ================= */
+const PHOTO_MAX_DIM = 1600;
+const PHOTO_QUALITY = 0.7;
+async function compressImage(file, maxDim = PHOTO_MAX_DIM, quality = PHOTO_QUALITY){
+  try {
+    const bitmap = await createImageBitmap(file);
+    let {width, height} = bitmap;
+    if (width > maxDim || height > maxDim){
+      const scale = maxDim / Math.max(width, height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
+    bitmap.close && bitmap.close();
+    const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", {type: "image/jpeg"});
+  } catch(e){
+    return file; // compression unsupported or failed — attach the original instead
+  }
+}
+document.querySelectorAll(".photo-btn").forEach(b => {
+  b.addEventListener("click", () => document.getElementById("file-"+cssId(b.dataset.qid)).click());
+});
+document.querySelectorAll('input[type="file"][data-qid]').forEach(inp => {
+  inp.addEventListener("change", async () => {
+    const qid = inp.dataset.qid;
+    const files = [...inp.files];
+    inp.value = "";
+    if (!files.length) return;
+    answers[qid] = answers[qid] || {};
+    answers[qid].photos = answers[qid].photos || [];
+    const compressed = await Promise.all(files.map(f => compressImage(f)));
+    compressed.forEach(f => answers[qid].photos.push({file:f, url:URL.createObjectURL(f)}));
+    renderStrip(qid);
+    updateShareBtn();
+    scheduleSave();
+  });
+});
+function renderStrip(qid){
+  const strip = document.getElementById("strip-"+cssId(qid));
+  const ph = (answers[qid] && answers[qid].photos) || [];
+  strip.innerHTML = ph.map((p,i) =>
+    `<div class="photo-thumb"><img src="${p.url}" alt="photo"><button class="rm" data-i="${i}">✕</button></div>`).join("");
+  strip.querySelectorAll(".rm").forEach(btn => btn.addEventListener("click", () => {
+    const i = +btn.dataset.i;
+    URL.revokeObjectURL(ph[i].url);
+    ph.splice(i, 1);
+    renderStrip(qid);
+    updateShareBtn();
+  }));
+}
+function allPhotos(){ return Object.values(answers).flatMap(a => a.photos || []); }
+function updateShareBtn(){
+  const n = allPhotos().length;
+  const b = document.getElementById("sharePhotosBtn");
+  b.style.display = n ? "block" : "none";
+  b.textContent = "📷 " + n;
+}
+document.getElementById("sharePhotosBtn").addEventListener("click", async () => {
+  const files = allPhotos().map(p => p.file);
+  if (navigator.canShare && navigator.canShare({files})){
+    try { await navigator.share({files, title:"TLS Initiatives Photos"}); } catch(e){}
+  } else {
+    toast("Photo sharing isn't supported on this device — attach photos from your camera roll instead.");
+  }
+});
+
+/* ================= COVER ================= */
+document.getElementById("fmtChips").addEventListener("click", e => {
+  const c = e.target.closest(".chip"); if(!c) return;
+  document.querySelectorAll("#fmtChips .chip").forEach(x=>x.classList.remove("sel"));
+  if (storeFormat === c.dataset.v){ storeFormat=""; }
+  else { c.classList.add("sel"); storeFormat = c.dataset.v; }
+  scheduleSave();
+});
+document.getElementById("visitDate").value = new Date().toISOString().slice(0,10);
+
+const COVER_FIELD_IDS = ["storeNum","regionNum","mgrName","tlsName","visitDate","bestPractices","opportunities","recipients"];
+const DATE_FIELD_IDS = INITIATIVES.filter(i=>i.hasFocusStore).flatMap(i=>[`start-${i.id}`,`deadline-${i.id}`]);
+const ALL_FIELD_IDS = COVER_FIELD_IDS.concat(DATE_FIELD_IDS);
+ALL_FIELD_IDS.forEach(id => {
+  document.getElementById(id).addEventListener("input", scheduleSave);
+});
+
+/* ================= DRAFT AUTOSAVE ================= */
+const DRAFT_KEY = "tlsInitDraft";
+let saveTimer;
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveDraft, 400); }
+
+function saveDraft(){
+  const g = id => document.getElementById(id).value;
+  const savedAnswers = {};
+  Object.entries(answers).forEach(([qid,a]) => {
+    if (a.rating || a.note) savedAnswers[qid] = {rating:a.rating, note:a.note || ""};
+  });
+  const draft = {
+    savedAt: Date.now(),
+    answers: savedAnswers,
+    reason,
+    storeFormat,
+    fields: Object.fromEntries(ALL_FIELD_IDS.map(id => [id, g(id)]))
+  };
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e){}
+}
+
+function applyDraft(draft){
+  const f = draft.fields || {};
+  ALL_FIELD_IDS.forEach(id => {
+    if (f[id] !== undefined) document.getElementById(id).value = f[id];
+  });
+  if (draft.storeFormat){
+    storeFormat = draft.storeFormat;
+    document.querySelectorAll("#fmtChips .chip").forEach(x => x.classList.toggle("sel", x.dataset.v === storeFormat));
+  }
+  Object.entries(draft.reason || {}).forEach(([id,v]) => {
+    reason[id] = v;
+    document.querySelectorAll(`.reason-chips[data-reason="${id}"] .chip`).forEach(c => c.classList.toggle("sel", c.dataset.v === v));
+  });
+  Object.entries(draft.answers || {}).forEach(([qid,a]) => {
+    if (!a.rating && !a.note) return;
+    answers[qid] = {rating:a.rating, note:a.note};
+    if (a.rating){
+      const row = document.querySelector(`.yn[data-qid="${qid}"]`);
+      if (row) row.querySelectorAll("button").forEach(b => b.classList.toggle("sel", b.dataset.r === a.rating));
+      updateReveal(qid, a.rating);
+    }
+    if (a.note){
+      const ta = document.querySelector(`textarea[data-qid="${qid}"]`);
+      if (ta) ta.value = a.note;
+    }
+    syncWhyFlag(qid);
+  });
+  refresh();
+}
+
+function loadDraft(){
+  let raw;
+  try { raw = localStorage.getItem(DRAFT_KEY); } catch(e){ return; }
+  if (!raw) return;
+  try {
+    applyDraft(JSON.parse(raw));
+    toast("Restored your in-progress report from earlier.");
+  } catch(e){}
+}
+
+function clearDraft(){
+  try { localStorage.removeItem(DRAFT_KEY); } catch(e){}
+}
+
+document.getElementById("newReportBtn").addEventListener("click", () => {
+  if (confirm("Start a new report? This clears the current in-progress report (photos will need to be re-attached).")){
+    clearDraft();
+    location.reload();
+  }
+});
+
+/* ================= PROGRESS / COUNTS ================= */
+function refresh(){
+  const REASON_IDS = INITIATIVES.map(i=>i.id);
+  const done = REASON_IDS.filter(id=>reason[id]).length + Object.values(answers).filter(a=>a.rating).length;
+  document.getElementById("pfill").style.width = (totalQ ? done/totalQ*100 : 0) + "%";
+  document.getElementById("pnum").textContent = done + " / " + totalQ;
+
+  INITIATIVES.forEach(init => {
+    const initTotal = (init.hasFocusStore?1:0) + init.structured.length;
+    if (!initTotal) return;
+    const keys = [];
+    if (init.hasFocusStore) keys.push(`${init.id}.focusStore`);
+    init.structured.forEach(s=>keys.push(`${init.id}.${s.id}`));
+    const dn = keys.filter(k=>answers[k]?.rating).length;
+    const el = document.getElementById("cnt-"+init.id);
+    if (el) el.textContent = dn + " / " + initTotal;
+  });
+
+  let noCount = 0;
+  Object.values(answers).forEach(a=>{ if(a.rating==="No") noCount++; });
+  document.getElementById("attnPill").innerHTML = noCount ? `<b>⚠️ ${noCount}</b>` : "";
+}
+refresh();
+loadDraft();
+
+/* ================= SUBMIT ================= */
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 3200);
+}
+function showConfirm(msg){
+  document.getElementById("confirmMsg").textContent = msg;
+  document.getElementById("confirmOverlay").classList.add("show");
+}
+document.getElementById("confirmOk").addEventListener("click", () => {
+  document.getElementById("confirmOverlay").classList.remove("show");
+});
+document.getElementById("confirmOverlay").addEventListener("click", e => {
+  if (e.target.id === "confirmOverlay") e.target.classList.remove("show");
+});
+
+document.getElementById("submitBtn").addEventListener("click", () => {
+  const storeNum = document.getElementById("storeNum").value.trim();
+  const tlsName = document.getElementById("tlsName").value.trim();
+  if (!storeNum || !tlsName){
+    toast("Fill in the HFG Store Number and TLS Name on the cover page first.");
+    document.getElementById("cover").scrollIntoView({behavior:"smooth"});
+    return;
+  }
+  const missingWhy = Object.entries(answers).filter(([qid,a]) =>
+    a.rating === "No" && !qid.endsWith(".focusStore") && !(a.note && a.note.length));
+  if (missingWhy.length){
+    toast(`${missingWhy.length} item(s) marked "No" still need a note on why.`);
+    document.getElementById("reveal-"+cssId(missingWhy[0][0])).scrollIntoView({behavior:"smooth", block:"center"});
+    return;
+  }
+  const missingDates = INITIATIVES.filter(i =>
+    i.hasFocusStore && answers[`${i.id}.focusStore`]?.rating === "Yes" &&
+    (!document.getElementById(`start-${i.id}`).value || !document.getElementById(`deadline-${i.id}`).value));
+  if (missingDates.length){
+    toast(`Enter the Start Date and Deadline for ${missingDates[0].label} since it's marked a focus store.`);
+    document.getElementById("reveal-"+cssId(missingDates[0].id+".focusStore")).scrollIntoView({behavior:"smooth", block:"center"});
+    return;
+  }
+  sendEmail();
+});
+
+async function sendEmail(){
+  const g = id => document.getElementById(id).value.trim();
+  const line = "----------------------------------------";
+
+  let b = [];
+  b.push("TLS INITIATIVES VISIT SUMMARY");
+  b.push(line);
+  b.push("Store Format: " + (storeFormat || "—"));
+  b.push("HFG Store Number: " + g("storeNum"));
+  b.push("Region Number: " + (g("regionNum") || "—"));
+  b.push("Store Manager: " + (g("mgrName") || "—"));
+  b.push("TLS: " + g("tlsName"));
+  b.push("Date of Visit: " + g("visitDate"));
+  b.push("");
+  b.push("REASON FOR VISIT");
+  b.push(line);
+  INITIATIVES.forEach(init => b.push(`${init.label}: ${reason[init.id] || "—"}`));
+  b.push("");
+
+  INITIATIVES.forEach(init => {
+    b.push(init.name);
+    b.push(line);
+    if (init.hasFocusStore){
+      const fs = answers[`${init.id}.focusStore`]?.rating;
+      b.push("Currently a focus store: " + (fs || "—"));
+      if (fs === "Yes"){
+        b.push("  Initial Start Date: " + (document.getElementById(`start-${init.id}`).value || "—"));
+        b.push("  Deadline for Completion: " + (document.getElementById(`deadline-${init.id}`).value || "—"));
+      }
+    }
+    init.structured.forEach(s => {
+      const a = answers[`${init.id}.${s.id}`];
+      if (!a || !a.rating) return;
+      b.push(`  ${a.rating === "No" ? "⚠️" : "✅"} ${s.text} — ${a.rating}`);
+      if (a.note) b.push(`     Why: ${a.note}`);
+    });
+    const obs = answers[`${init.id}.obs`];
+    if (obs && obs.note) b.push("  Observations: " + obs.note);
+    if (obs && obs.photos && obs.photos.length) b.push(`  Photos: ${obs.photos.length} (sent separately)`);
+    b.push("");
+  });
+
+  b.push("VISIT SUMMARY — covered with Store Manager / PIC");
+  b.push(line);
+  b.push("Best Practices Observed:");
+  b.push(g("bestPractices") || "—");
+  b.push("");
+  b.push("Opportunities for Improvement:");
+  b.push(g("opportunities") || "—");
+  b.push("");
+  b.push("Submitted via TLS Initiatives app");
+
+  const subject = `TLS Initiatives Visit — Store ${g("storeNum")} — ${g("visitDate")}`;
+  const to = g("recipients") || "DOusley@houchens.com, MMooney@houchens.com";
+  const bodyText = b.join("\n");
+  const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+  const photoFiles = allPhotos().map(p => p.file);
+
+  if (photoFiles.length && navigator.canShare && navigator.canShare({files: photoFiles})){
+    try {
+      await navigator.share({files: photoFiles, title: subject, text: bodyText});
+      clearDraft();
+      showConfirm(`Your report and ${photoFiles.length} photo(s) have been handed off to Mail. Review it there, then tap Send to deliver it.`);
+      return;
+    } catch(e){
+      if (e.name === "AbortError") return; // user cancelled the share sheet
+      // sharing failed for another reason — fall back to mailto below
+    }
+  }
+
+  window.location.href = url;
+  clearDraft();
+  showConfirm(photoFiles.length
+    ? `Your report has been handed off to Mail, but the ${photoFiles.length} photo(s) couldn't be attached automatically. Attach them from your camera roll, or tap the 📷 button to share them separately — then tap Send to deliver everything.`
+    : "Your report has been handed off to Mail. Review it there, then tap Send to deliver it.");
+}
+</script>
+</body>
+</html>
