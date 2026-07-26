@@ -157,7 +157,7 @@
 <header>
   <button class="new-report-btn" id="newReportBtn" type="button">↺ New</button>
   <h1>TLS Initiatives Summary</h1>
-  <div class="sub">Grocery Inventory Reduction • Ground Beef Markdown • Cut Fruit</div>
+  <div class="sub">Grocery Inventory Reduction • Ground Beef Markdown • Cut Fruit • Banana Handling</div>
   <div class="progress-wrap">
     <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
     <div class="progress-num" id="pnum">0 / 0</div>
@@ -204,6 +204,18 @@
 
   <!-- initiative sections injected here -->
   <div id="initiatives"></div>
+
+  <!-- ============ MISC STORE WALK NOTES ============ -->
+  <div class="card">
+    <h2>📝 Misc. Store Walk Notes</h2>
+    <p class="hint">Anything else worth flagging that didn't fit above — general callouts for this visit.</p>
+    <div class="q">
+      <textarea data-qid="misc.notes" placeholder="Notes or callouts to flag…"></textarea>
+      <button class="photo-btn" data-qid="misc.notes">📷 Add photos</button>
+      <input type="file" accept="image/*" multiple hidden id="file-misc-notes" data-qid="misc.notes">
+      <div class="photo-strip" id="strip-misc-notes"></div>
+    </div>
+  </div>
 
   <!-- ============ VISIT SUMMARY ============ -->
   <div class="card">
@@ -254,7 +266,8 @@ const INITIATIVES = [
     ]
   },
   { id:"groundbeef", name:"GROUND BEEF MARKDOWN", label:"Ground Beef Markdown", hasFocusStore:false, structured:[] },
-  { id:"cutfruit", name:"CUT FRUIT", label:"Cut Fruit", hasFocusStore:false, structured:[] }
+  { id:"cutfruit", name:"CUT FRUIT", label:"Cut Fruit", hasFocusStore:false, structured:[] },
+  { id:"banana", name:"BANANA HANDLING", label:"Banana Handling", hasFocusStore:false, structured:[] }
 ];
 
 /* ================= STATE ================= */
@@ -681,6 +694,13 @@ async function sendEmail(){
     if (obs && obs.photos && obs.photos.length) b.push(`  Photos: ${obs.photos.length} (sent separately)`);
     b.push("");
   });
+
+  const misc = answers["misc.notes"];
+  b.push("MISC. STORE WALK NOTES");
+  b.push(line);
+  b.push((misc && misc.note) || "—");
+  if (misc && misc.photos && misc.photos.length) b.push(`Photos: ${misc.photos.length} (sent separately)`);
+  b.push("");
 
   b.push("VISIT SUMMARY — covered with Store Manager / PIC");
   b.push(line);
