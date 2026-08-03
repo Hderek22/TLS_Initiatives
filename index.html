@@ -86,6 +86,8 @@
   }
   .dept-head h2{font-size:1rem;font-weight:800;letter-spacing:.03em}
   .dept-head .count{font-size:.72rem;background:rgba(255,255,255,.16);border-radius:20px;padding:3px 10px;font-variant-numeric:tabular-nums}
+  .sop-link{font-size:.68rem;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 10px;margin-right:8px;text-decoration:none;white-space:nowrap}
+  .sop-link:active{background:rgba(255,255,255,.3)}
   .dept-head .caret{margin-left:10px;transition:transform .2s}
   .dept-head.open .caret{transform:rotate(180deg)}
   .dept-body{display:none}
@@ -262,7 +264,7 @@
 <script>
 /* ================= DATA ================= */
 const INITIATIVES = [
-  { id:"grocery", name:"GROCERY INVENTORY REDUCTION", label:"Grocery Inventory Reduction", hasFocusStore:true,
+  { id:"grocery", name:"GROCERY INVENTORY REDUCTION", label:"Grocery Inventory Reduction", hasFocusStore:true, sop:"sop/grocery.pdf",
     structured:[
       {id:"backroomLevel", section:"Backroom Conditions", text:"Is the Overall Backroom Inventory at an acceptable level?"},
       {id:"backroomOrg", section:"Backroom Conditions", text:"Is Backroom Inventory neat and organized by overstock, backstock, and DSD?"},
@@ -274,7 +276,7 @@ const INITIATIVES = [
       {id:"reclaimCurrent", section:"Rotation & Shrink", text:"Reclaim current"}
     ]
   },
-  { id:"groundbeef", name:"GROUND BEEF MARKDOWN", label:"Ground Beef Markdown", hasFocusStore:false,
+  { id:"groundbeef", name:"GROUND BEEF MARKDOWN", label:"Ground Beef Markdown", hasFocusStore:false, sop:"sop/groundbeef.pdf",
     structured:[
       {id:"gbProduction", section:"Production", text:"Ground beef production appropriate"},
       {id:"grindTimes", section:"Production", text:"Multiple grind times observed"},
@@ -285,7 +287,7 @@ const INITIATIVES = [
       {id:"gbRhcGot", section:"Markdown & Dating", text:"RHC / GOT utilized for markdowns / throwaways"}
     ]
   },
-  { id:"cutfruit", name:"CUT FRUIT", label:"Cut Fruit", hasFocusStore:false,
+  { id:"cutfruit", name:"CUT FRUIT", label:"Cut Fruit", hasFocusStore:false, sop:"sop/cutfruit.pdf",
     structured:[
       {id:"cutFruitQuality", section:"Quality", text:"Cut fruit quality / variety matches tags"},
       {id:"prepRoomClean", section:"Prep & Safety", text:"Prep room clean / organized"},
@@ -293,7 +295,7 @@ const INITIATIVES = [
       {id:"knifeHandling", section:"Prep & Safety", text:"Safe knife handling / storage"}
     ]
   },
-  { id:"banana", name:"BANANA HANDLING", label:"Banana Handling", hasFocusStore:false,
+  { id:"banana", name:"BANANA HANDLING", label:"Banana Handling", hasFocusStore:false, sop:"sop/banana.pdf",
     structured:[
       {id:"bananaQuality", section:"Quality & SOP", text:"Banana quality / SOP being followed"},
       {id:"bananaMarkdown", section:"Markdown", text:"Markdown / repurpose policy followed"},
@@ -342,7 +344,7 @@ INITIATIVES.forEach((init, ii) => {
 
   const head = document.createElement("div");
   head.className = "dept-head" + (ii===0 ? " open" : "");
-  head.innerHTML = `<h2>${init.name}</h2><span style="display:flex;align-items:center">${initTotal ? `<span class="count" id="cnt-${init.id}"></span>` : ""}<span class="caret">▾</span></span>`;
+  head.innerHTML = `<h2>${init.name}</h2><span style="display:flex;align-items:center">${init.sop ? `<a class="sop-link" href="${init.sop}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📄 SOP</a>` : ""}${initTotal ? `<span class="count" id="cnt-${init.id}"></span>` : ""}<span class="caret">▾</span></span>`;
   const body = document.createElement("div");
   body.className = "dept-body" + (ii===0 ? " open" : "");
 
