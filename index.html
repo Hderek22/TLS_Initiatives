@@ -265,12 +265,41 @@ const INITIATIVES = [
   { id:"grocery", name:"GROCERY INVENTORY REDUCTION", label:"Grocery Inventory Reduction", hasFocusStore:true,
     structured:[
       {id:"backroomLevel", section:"Backroom Conditions", text:"Is the Overall Backroom Inventory at an acceptable level?"},
-      {id:"backroomOrg", section:"Backroom Conditions", text:"Is Backroom Inventory neat and organized by overstock, backstock, and DSD?"}
+      {id:"backroomOrg", section:"Backroom Conditions", text:"Is Backroom Inventory neat and organized by overstock, backstock, and DSD?"},
+      {id:"shelfMatchesTag", section:"Shelf Inventory", text:"Shelf inventory levels support the Grocery Inventory Reduction Plan (inventory on shelf matches tag movement)"},
+      {id:"overstockReduced", section:"Shelf Inventory", text:"Overstock levels being reduced per plan"},
+      {id:"tprAssigned", section:"Shelf Inventory", text:"TPRs are assigned where needed"},
+      {id:"rotationFollowed", section:"Rotation & Shrink", text:"Rotation followed"},
+      {id:"damagesProcessed", section:"Rotation & Shrink", text:"Damages processed daily"},
+      {id:"reclaimCurrent", section:"Rotation & Shrink", text:"Reclaim current"}
     ]
   },
-  { id:"groundbeef", name:"GROUND BEEF MARKDOWN", label:"Ground Beef Markdown", hasFocusStore:false, structured:[] },
-  { id:"cutfruit", name:"CUT FRUIT", label:"Cut Fruit", hasFocusStore:false, structured:[] },
-  { id:"banana", name:"BANANA HANDLING", label:"Banana Handling", hasFocusStore:false, structured:[] }
+  { id:"groundbeef", name:"GROUND BEEF MARKDOWN", label:"Ground Beef Markdown", hasFocusStore:false,
+    structured:[
+      {id:"gbProduction", section:"Production", text:"Ground beef production appropriate"},
+      {id:"grindTimes", section:"Production", text:"Multiple grind times observed"},
+      {id:"gbDates", section:"Markdown & Dating", text:"Ground beef dates within standards"},
+      {id:"gbTimestamp", section:"Markdown & Dating", text:"Time stamp on GB scale labels"},
+      {id:"gbMarkdownProcess", section:"Markdown & Dating", text:"Markdown process followed"},
+      {id:"gbOverproduction", section:"Markdown & Dating", text:"Signs of overproduction (excessive reduced items)"},
+      {id:"gbRhcGot", section:"Markdown & Dating", text:"RHC / GOT utilized for markdowns / throwaways"}
+    ]
+  },
+  { id:"cutfruit", name:"CUT FRUIT", label:"Cut Fruit", hasFocusStore:false,
+    structured:[
+      {id:"cutFruitQuality", section:"Quality", text:"Cut fruit quality / variety matches tags"},
+      {id:"prepRoomClean", section:"Prep & Safety", text:"Prep room clean / organized"},
+      {id:"meshGloves", section:"Prep & Safety", text:"Mesh gloves available / being used"},
+      {id:"knifeHandling", section:"Prep & Safety", text:"Safe knife handling / storage"}
+    ]
+  },
+  { id:"banana", name:"BANANA HANDLING", label:"Banana Handling", hasFocusStore:false,
+    structured:[
+      {id:"bananaQuality", section:"Quality & SOP", text:"Banana quality / SOP being followed"},
+      {id:"bananaMarkdown", section:"Markdown", text:"Markdown / repurpose policy followed"},
+      {id:"bananaRhcGot", section:"Markdown", text:"RHC / GOT utilized — markdowns / throwaways"}
+    ]
+  }
 ];
 
 /* ================= STATE ================= */
