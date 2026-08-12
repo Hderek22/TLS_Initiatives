@@ -86,7 +86,7 @@
   }
   .dept-head h2{font-size:1rem;font-weight:800;letter-spacing:.03em}
   .dept-head .count{font-size:.72rem;background:rgba(255,255,255,.16);border-radius:20px;padding:3px 10px;font-variant-numeric:tabular-nums}
-  .sop-link{font-size:.68rem;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 10px;margin-right:8px;text-decoration:none;white-space:nowrap}
+  .sop-link{font-size:.68rem;font-weight:700;font-family:inherit;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 10px;margin-right:8px;text-decoration:none;white-space:nowrap;cursor:pointer}
   .sop-link:active{background:rgba(255,255,255,.3)}
   .dept-head .caret{margin-left:10px;transition:transform .2s}
   .dept-head.open .caret{transform:rotate(180deg)}
@@ -142,6 +142,18 @@
     opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;max-width:88%;text-align:center;
   }
   .toast.show{opacity:1}
+  /* SOP viewer overlay — keeps the app in place instead of navigating away */
+  .sop-overlay{position:fixed;inset:0;background:var(--paper);display:none;flex-direction:column;z-index:200}
+  .sop-overlay.show{display:flex}
+  .sop-overlay-bar{
+    display:flex;align-items:center;gap:10px;
+    background:var(--green-deep);color:#fff;padding:12px 14px calc(10px + env(safe-area-inset-top));
+    padding-top:calc(12px + env(safe-area-inset-top));
+  }
+  .sop-overlay-bar span{flex:1;font-size:.9rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sop-overlay-open{font-size:.72rem;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:6px 10px;text-decoration:none;white-space:nowrap}
+  .sop-overlay-close{font-size:.72rem;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:6px 10px;white-space:nowrap;cursor:pointer}
+  .sop-overlay-frame{flex:1;width:100%;border:none;background:#fff}
 </style>
 <script data-goatcounter="https://hderek22.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
@@ -237,6 +249,15 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="sop-overlay" id="sopOverlay">
+  <div class="sop-overlay-bar">
+    <span id="sopOverlayTitle">SOP</span>
+    <a class="sop-overlay-open" id="sopOverlayOpen" href="#" target="_blank" rel="noopener">Open in new tab ↗</a>
+    <button class="sop-overlay-close" id="sopOverlayClose" type="button">✕ Close</button>
+  </div>
+  <iframe class="sop-overlay-frame" id="sopOverlayFrame" src="" title="SOP document"></iframe>
+</div>
+
 <script>
 /* ================= DATA ================= */
 const INITIATIVES = [
@@ -295,7 +316,7 @@ INITIATIVES.forEach((init, ii) => {
 
   const head = document.createElement("div");
   head.className = "dept-head" + (ii===0 ? " open" : "");
-  head.innerHTML = `<h2>${init.name}</h2><span style="display:flex;align-items:center">${init.sop ? `<a class="sop-link" href="${init.sop}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📄 SOP</a>` : ""}${initTotal ? `<span class="count" id="cnt-${init.id}"></span>` : ""}<span class="caret">▾</span></span>`;
+  head.innerHTML = `<h2>${init.name}</h2><span style="display:flex;align-items:center">${init.sop ? `<button type="button" class="sop-link" data-sop="${init.sop}" data-title="${init.label} SOP" onclick="event.stopPropagation()">📄 SOP</button>` : ""}${initTotal ? `<span class="count" id="cnt-${init.id}"></span>` : ""}<span class="caret">▾</span></span>`;
   const body = document.createElement("div");
   body.className = "dept-body" + (ii===0 ? " open" : "");
 
@@ -393,6 +414,22 @@ document.querySelectorAll(".visit-type-chips").forEach(row => {
     scheduleSave();
   });
 });
+
+/* ================= SOP VIEWER (opens in-page so the app never navigates away) ================= */
+function openSop(url, title){
+  document.getElementById("sopOverlayTitle").textContent = title;
+  document.getElementById("sopOverlayOpen").href = url;
+  document.getElementById("sopOverlayFrame").src = url;
+  document.getElementById("sopOverlay").classList.add("show");
+}
+function closeSop(){
+  document.getElementById("sopOverlay").classList.remove("show");
+  document.getElementById("sopOverlayFrame").src = "";
+}
+document.querySelectorAll(".sop-link").forEach(btn => {
+  btn.addEventListener("click", () => openSop(btn.dataset.sop, btn.dataset.title));
+});
+document.getElementById("sopOverlayClose").addEventListener("click", closeSop);
 
 /* ================= YES/NO BUTTONS ================= */
 function updateReveal(qid, r){
