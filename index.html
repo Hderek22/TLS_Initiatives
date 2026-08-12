@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>TLS Initiatives Summary</title>
+<title>Progression Report</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-512.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <meta name="theme-color" content="#14532d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="TLS Initiatives">
+<meta name="apple-mobile-web-app-title" content="Progression Report">
 <style>
   :root{
     --ink:#1c2b26;
@@ -70,7 +70,7 @@
   }
   input:focus,textarea:focus{outline:none;border-color:var(--green)}
   textarea{resize:vertical;min-height:74px;line-height:1.45}
-  /* chips (store format, reason-for-visit, yes/no-as-chips reveal groups) */
+  /* chips (store format, visit-type, yes/no-as-chips reveal groups) */
   .chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
   .chip{
     border:1.5px solid var(--line);border-radius:10px;background:#fff;
@@ -158,7 +158,7 @@
 
 <header>
   <button class="new-report-btn" id="newReportBtn" type="button">↺ New</button>
-  <h1>TLS Initiatives Summary</h1>
+  <h1>Progression Report</h1>
   <div class="sub">Grocery Inventory Reduction • Ground Beef Markdown • Cut Fruit • Banana Handling</div>
   <div class="progress-wrap">
     <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
@@ -197,13 +197,6 @@
     <input type="date" id="visitDate">
   </div>
 
-  <!-- ============ REASON FOR VISIT ============ -->
-  <div class="card" id="reasonCard">
-    <h2>🎯 Reason for Visit</h2>
-    <p class="hint">For each initiative, mark whether this is a routine follow-up or the store is a current focus store.</p>
-    <div id="reasonRows"></div>
-  </div>
-
   <!-- initiative sections injected here -->
   <div id="initiatives"></div>
 
@@ -237,7 +230,7 @@
     <h2>📧 Send Completed Summary</h2>
     <p class="hint">This opens the summary in your email app — you'll still need to tap Send there to deliver it.</p>
     <label class="field" for="recipients">Recipients</label>
-    <input type="email" id="recipients" multiple value="DOusley@houchens.com, MMooney@houchens.com" placeholder="name@houchens.com, name@houchens.com">
+    <input type="email" id="recipients" multiple value="DOusley@houchens.com" placeholder="name@houchens.com, name@houchens.com">
   </div>
 
 </main>
@@ -264,7 +257,7 @@
 <script>
 /* ================= DATA ================= */
 const INITIATIVES = [
-  { id:"grocery", name:"GROCERY INVENTORY REDUCTION", label:"Grocery Inventory Reduction", hasFocusStore:true, sop:"sop/grocery.pdf",
+  { id:"grocery", name:"GROCERY INVENTORY REDUCTION", label:"Grocery Inventory Reduction", hasFocusStore:true, hasVisitType:true, sop:"sop/grocery.pdf",
     structured:[
       {id:"backroomLevel", section:"Backroom Conditions", text:"Is the Overall Backroom Inventory at an acceptable level?"},
       {id:"backroomOrg", section:"Backroom Conditions", text:"Is Backroom Inventory neat and organized by overstock, backstock, and DSD?"},
@@ -283,7 +276,7 @@ const INITIATIVES = [
       {id:"gbDates", section:"Markdown & Dating", text:"Ground beef dates within standards"},
       {id:"gbTimestamp", section:"Markdown & Dating", text:"Time stamp on GB scale labels"},
       {id:"gbMarkdownProcess", section:"Markdown & Dating", text:"Markdown process followed"},
-      {id:"gbOverproduction", section:"Markdown & Dating", text:"Signs of overproduction (excessive reduced items)"},
+      {id:"gbOverproduction", section:"Markdown & Dating", text:"Reduced items at acceptable levels."},
       {id:"gbRhcGot", section:"Markdown & Dating", text:"RHC / GOT utilized for markdowns / throwaways"}
     ]
   },
@@ -306,41 +299,16 @@ const INITIATIVES = [
 
 /* ================= STATE ================= */
 const answers = {};   // qid -> {rating, note, photos}
-const reason = {};    // initiative id -> "Follow Up" | "Focus"
+const visitType = {}; // initiative id -> "Initial Visit" | "Follow Up"
 let totalQ = 0;
 let storeFormat = "";
 
 function cssId(qid){ return qid.replace(/\./g,"-"); }
 
-/* ================= BUILD: REASON FOR VISIT ================= */
-const reasonRowsEl = document.getElementById("reasonRows");
-INITIATIVES.forEach(init => {
-  totalQ++;
-  const row = document.createElement("div");
-  row.innerHTML = `
-    <label class="field">${init.label}</label>
-    <div class="chips reason-chips" data-reason="${init.id}">
-      <button class="chip" data-v="Follow Up">Follow Up</button>
-      <button class="chip" data-v="Focus">Focus</button>
-    </div>`;
-  reasonRowsEl.appendChild(row);
-});
-document.querySelectorAll(".reason-chips").forEach(row => {
-  row.addEventListener("click", e => {
-    const c = e.target.closest(".chip"); if(!c) return;
-    const id = row.dataset.reason;
-    row.querySelectorAll(".chip").forEach(x=>x.classList.remove("sel"));
-    if (reason[id] === c.dataset.v){ delete reason[id]; }
-    else { c.classList.add("sel"); reason[id] = c.dataset.v; }
-    refresh();
-    scheduleSave();
-  });
-});
-
 /* ================= BUILD: INITIATIVE SECTIONS ================= */
 const initEl = document.getElementById("initiatives");
 INITIATIVES.forEach((init, ii) => {
-  const initTotal = (init.hasFocusStore?1:0) + init.structured.length;
+  const initTotal = (init.hasFocusStore?1:0) + (init.hasVisitType?1:0) + init.structured.length;
 
   const head = document.createElement("div");
   head.className = "dept-head" + (ii===0 ? " open" : "");
@@ -366,6 +334,19 @@ INITIATIVES.forEach((init, ii) => {
         <input type="date" id="deadline-${init.id}">
       </div>`;
     body.appendChild(q);
+  }
+
+  if (init.hasVisitType){
+    totalQ++;
+    const vtq = document.createElement("div");
+    vtq.className = "q";
+    vtq.innerHTML = `
+      <p>Is this an initial visit or a follow-up?</p>
+      <div class="chips visit-type-chips" data-visittype="${init.id}">
+        <button class="chip" data-v="Initial Visit">Initial Visit</button>
+        <button class="chip" data-v="Follow Up">Follow Up</button>
+      </div>`;
+    body.appendChild(vtq);
   }
 
   let lastSection = null;
@@ -416,6 +397,18 @@ INITIATIVES.forEach((init, ii) => {
 document.querySelectorAll(".dept-head").forEach(head => {
   const body = head.nextElementSibling;
   head.addEventListener("click", () => { head.classList.toggle("open"); body.classList.toggle("open"); });
+});
+
+document.querySelectorAll(".visit-type-chips").forEach(row => {
+  row.addEventListener("click", e => {
+    const c = e.target.closest(".chip"); if(!c) return;
+    const id = row.dataset.visittype;
+    row.querySelectorAll(".chip").forEach(x=>x.classList.remove("sel"));
+    if (visitType[id] === c.dataset.v){ delete visitType[id]; }
+    else { c.classList.add("sel"); visitType[id] = c.dataset.v; }
+    refresh();
+    scheduleSave();
+  });
 });
 
 /* ================= YES/NO BUTTONS ================= */
@@ -529,7 +522,7 @@ function updateShareBtn(){
 document.getElementById("sharePhotosBtn").addEventListener("click", async () => {
   const files = allPhotos().map(p => p.file);
   if (navigator.canShare && navigator.canShare({files})){
-    try { await navigator.share({files, title:"TLS Initiatives Photos"}); } catch(e){}
+    try { await navigator.share({files, title:"Progression Report Photos"}); } catch(e){}
   } else {
     toast("Photo sharing isn't supported on this device — attach photos from your camera roll instead.");
   }
@@ -566,7 +559,7 @@ function saveDraft(){
   const draft = {
     savedAt: Date.now(),
     answers: savedAnswers,
-    reason,
+    visitType,
     storeFormat,
     fields: Object.fromEntries(ALL_FIELD_IDS.map(id => [id, g(id)]))
   };
@@ -582,9 +575,9 @@ function applyDraft(draft){
     storeFormat = draft.storeFormat;
     document.querySelectorAll("#fmtChips .chip").forEach(x => x.classList.toggle("sel", x.dataset.v === storeFormat));
   }
-  Object.entries(draft.reason || {}).forEach(([id,v]) => {
-    reason[id] = v;
-    document.querySelectorAll(`.reason-chips[data-reason="${id}"] .chip`).forEach(c => c.classList.toggle("sel", c.dataset.v === v));
+  Object.entries(draft.visitType || {}).forEach(([id,v]) => {
+    visitType[id] = v;
+    document.querySelectorAll(`.visit-type-chips[data-visittype="${id}"] .chip`).forEach(c => c.classList.toggle("sel", c.dataset.v === v));
   });
   Object.entries(draft.answers || {}).forEach(([qid,a]) => {
     if (!a.rating && !a.note) return;
@@ -626,18 +619,17 @@ document.getElementById("newReportBtn").addEventListener("click", () => {
 
 /* ================= PROGRESS / COUNTS ================= */
 function refresh(){
-  const REASON_IDS = INITIATIVES.map(i=>i.id);
-  const done = REASON_IDS.filter(id=>reason[id]).length + Object.values(answers).filter(a=>a.rating).length;
+  const done = Object.keys(visitType).length + Object.values(answers).filter(a=>a.rating).length;
   document.getElementById("pfill").style.width = (totalQ ? done/totalQ*100 : 0) + "%";
   document.getElementById("pnum").textContent = done + " / " + totalQ;
 
   INITIATIVES.forEach(init => {
-    const initTotal = (init.hasFocusStore?1:0) + init.structured.length;
+    const initTotal = (init.hasFocusStore?1:0) + (init.hasVisitType?1:0) + init.structured.length;
     if (!initTotal) return;
     const keys = [];
     if (init.hasFocusStore) keys.push(`${init.id}.focusStore`);
     init.structured.forEach(s=>keys.push(`${init.id}.${s.id}`));
-    const dn = keys.filter(k=>answers[k]?.rating).length;
+    const dn = keys.filter(k=>answers[k]?.rating).length + (init.hasVisitType && visitType[init.id] ? 1 : 0);
     const el = document.getElementById("cnt-"+init.id);
     if (el) el.textContent = dn + " / " + initTotal;
   });
@@ -697,7 +689,7 @@ async function sendEmail(){
   const line = "----------------------------------------";
 
   let b = [];
-  b.push("TLS INITIATIVES VISIT SUMMARY");
+  b.push("TLS PROGRESSION REPORT");
   b.push(line);
   b.push("Store Format: " + (storeFormat || "—"));
   b.push("HFG Store Number: " + g("storeNum"));
@@ -705,10 +697,6 @@ async function sendEmail(){
   b.push("Store Manager: " + (g("mgrName") || "—"));
   b.push("TLS: " + g("tlsName"));
   b.push("Date of Visit: " + g("visitDate"));
-  b.push("");
-  b.push("REASON FOR VISIT");
-  b.push(line);
-  INITIATIVES.forEach(init => b.push(`${init.label}: ${reason[init.id] || "—"}`));
   b.push("");
 
   INITIATIVES.forEach(init => {
@@ -721,6 +709,9 @@ async function sendEmail(){
         b.push("  Initial Start Date: " + (document.getElementById(`start-${init.id}`).value || "—"));
         b.push("  Deadline for Completion: " + (document.getElementById(`deadline-${init.id}`).value || "—"));
       }
+    }
+    if (init.hasVisitType){
+      b.push("Visit Type: " + (visitType[init.id] || "—"));
     }
     init.structured.forEach(s => {
       const a = answers[`${init.id}.${s.id}`];
@@ -749,10 +740,10 @@ async function sendEmail(){
   b.push("Opportunities for Improvement:");
   b.push(g("opportunities") || "—");
   b.push("");
-  b.push("Submitted via TLS Initiatives app");
+  b.push("Submitted via Progression Report app");
 
-  const subject = `TLS Initiatives Visit — Store ${g("storeNum")} — ${g("visitDate")}`;
-  const to = g("recipients") || "DOusley@houchens.com, MMooney@houchens.com";
+  const subject = `Progression Report — Store ${g("storeNum")} — ${g("visitDate")}`;
+  const to = g("recipients") || "DOusley@houchens.com";
   const bodyText = b.join("\n");
   const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
   const photoFiles = allPhotos().map(p => p.file);

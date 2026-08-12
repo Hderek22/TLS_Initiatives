@@ -1,6 +1,6 @@
 {
-  "name": "TLS Initiatives Summary",
-  "short_name": "TLS Initiatives",
+  "name": "Progression Report",
+  "short_name": "Progression Report",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
