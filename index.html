@@ -142,14 +142,6 @@
     opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;max-width:88%;text-align:center;
   }
   .toast.show{opacity:1}
-  /* confirmation modal */
-  .confirm-overlay{position:fixed;inset:0;background:rgba(15,30,20,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
-  .confirm-overlay.show{display:flex}
-  .confirm-card{background:#fff;border-radius:16px;padding:26px 22px 20px;max-width:360px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)}
-  .confirm-icon{font-size:2.2rem;margin-bottom:8px}
-  .confirm-card h3{font-size:1.05rem;font-weight:800;color:var(--green-deep);margin-bottom:8px}
-  .confirm-card p{font-size:.88rem;line-height:1.5;color:var(--ink-soft)}
-  .confirm-ok{margin-top:18px;width:100%;background:var(--green-deep);color:#fff;border:none;border-radius:10px;padding:12px;font-size:.92rem;font-weight:800;cursor:pointer}
 </style>
 <script data-goatcounter="https://hderek22.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
@@ -244,15 +236,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-card">
-    <div class="confirm-icon">📬</div>
-    <h3>Report Ready in Mail</h3>
-    <p id="confirmMsg"></p>
-    <button class="confirm-ok" id="confirmOk">Got it</button>
-  </div>
-</div>
 
 <script>
 /* ================= DATA ================= */
@@ -647,17 +630,6 @@ function toast(msg){
   t.textContent = msg; t.classList.add("show");
   setTimeout(()=>t.classList.remove("show"), 3200);
 }
-function showConfirm(msg){
-  document.getElementById("confirmMsg").textContent = msg;
-  document.getElementById("confirmOverlay").classList.add("show");
-}
-document.getElementById("confirmOk").addEventListener("click", () => {
-  document.getElementById("confirmOverlay").classList.remove("show");
-});
-document.getElementById("confirmOverlay").addEventListener("click", e => {
-  if (e.target.id === "confirmOverlay") e.target.classList.remove("show");
-});
-
 document.getElementById("submitBtn").addEventListener("click", () => {
   const storeNum = document.getElementById("storeNum").value.trim();
   const tlsName = document.getElementById("tlsName").value.trim();
@@ -752,7 +724,6 @@ async function sendEmail(){
     try {
       await navigator.share({files: photoFiles, title: subject, text: bodyText});
       clearDraft();
-      showConfirm(`Your report and ${photoFiles.length} photo(s) have been handed off to Mail. Review it there, then tap Send to deliver it.`);
       return;
     } catch(e){
       if (e.name === "AbortError") return; // user cancelled the share sheet
@@ -762,9 +733,6 @@ async function sendEmail(){
 
   window.location.href = url;
   clearDraft();
-  showConfirm(photoFiles.length
-    ? `Your report has been handed off to Mail, but the ${photoFiles.length} photo(s) couldn't be attached automatically. Attach them from your camera roll, or tap the 📷 button to share them separately — then tap Send to deliver everything.`
-    : "Your report has been handed off to Mail. Review it there, then tap Send to deliver it.");
 }
 </script>
 </body>
