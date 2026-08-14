@@ -740,9 +740,13 @@ async function sendEmail(){
   const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
   const photoFiles = allPhotos().map(p => p.file);
 
-  if (photoFiles.length && navigator.canShare && navigator.canShare({files: photoFiles})){
+  if (navigator.share){
+    const shareData = {title: subject, text: bodyText};
+    if (photoFiles.length && navigator.canShare && navigator.canShare({files: photoFiles})){
+      shareData.files = photoFiles;
+    }
     try {
-      await navigator.share({files: photoFiles, title: subject, text: bodyText});
+      await navigator.share(shareData);
       clearDraft();
       return;
     } catch(e){
