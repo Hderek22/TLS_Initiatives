@@ -458,8 +458,8 @@ document.querySelectorAll('.q textarea[data-qid]').forEach(ta => {
 });
 
 /* ================= PHOTO ATTACHMENTS (observations) ================= */
-const PHOTO_MAX_DIM = 1600;
-const PHOTO_QUALITY = 0.7;
+const PHOTO_MAX_DIM = 1280;
+const PHOTO_QUALITY = 0.6;
 async function compressImage(file, maxDim = PHOTO_MAX_DIM, quality = PHOTO_QUALITY){
   try {
     const bitmap = await createImageBitmap(file);
@@ -511,15 +511,49 @@ function renderStrip(qid){
     updateShareBtn();
   }));
 }
-function allPhotos(){ return Object.values(answers).flatMap(a => a.photos || []); }
+/* qids in the same order they're presented in the report, so attached photos line up with the text */
+function photoQidOrder(){
+  const order = [];
+  INITIATIVES.forEach(init => {
+    [...new Set(init.structured.map(s => s.section))].forEach(sec => order.push(`${init.id}.section.${sectionSlug(sec)}`));
+    order.push(`${init.id}.obs`);
+  });
+  order.push("misc.notes");
+  return order;
+}
+function labelForQid(qid){
+  if (qid === "misc.notes") return "Store Health";
+  const m = qid.match(/^([a-z]+)\.(section\.(.+)|obs)$/);
+  if (!m) return qid;
+  const init = INITIATIVES.find(i => i.id === m[1]);
+  if (!init) return qid;
+  if (m[2] === "obs") return `${init.label} - Observations`;
+  const sec = init.structured.find(s => sectionSlug(s.section) === m[3]);
+  return `${init.label} - ${sec ? sec.section : m[3]}`;
+}
+function orderedPhotos(){
+  return photoQidOrder().flatMap(qid => {
+    const a = answers[qid];
+    if (!a || !a.photos || !a.photos.length) return [];
+    const label = labelForQid(qid);
+    return a.photos.map(p => ({...p, label}));
+  });
+}
+function buildPhotoFiles(){
+  return orderedPhotos().map((p, i) => {
+    const ext = (p.file.name.match(/\.\w+$/) || [".jpg"])[0];
+    const safeLabel = p.label.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    return new File([p.file], `${String(i + 1).padStart(2, "0")}_${safeLabel}${ext}`, {type: p.file.type});
+  });
+}
 function updateShareBtn(){
-  const n = allPhotos().length;
+  const n = orderedPhotos().length;
   const b = document.getElementById("sharePhotosBtn");
   b.style.display = n ? "block" : "none";
   b.textContent = "📷 " + n;
 }
 document.getElementById("sharePhotosBtn").addEventListener("click", async () => {
-  const files = allPhotos().map(p => p.file);
+  const files = buildPhotoFiles();
   if (navigator.canShare && navigator.canShare({files})){
     try { await navigator.share({files, title:"Progression Report Photos"}); } catch(e){}
   } else {
@@ -674,25 +708,41 @@ document.getElementById("submitBtn").addEventListener("click", () => {
 
 async function sendEmail(){
   const g = id => document.getElementById(id).value.trim();
-  const line = "----------------------------------------";
+  const HR = "----------------------------------------";
 
   let b = [];
-  b.push("TLS PROGRESSION REPORT");
-  b.push(line);
+  b.push("TLS PROGRESSION REPORT — Store " + (g("storeNum") || "—"));
+  b.push(HR);
+  b.push("Date of Visit: " + (g("visitDate") || "—"));
   b.push("Store Format: " + (storeFormat || "—"));
-  b.push("HFG Store Number: " + g("storeNum"));
   b.push("Region Number: " + (g("regionNum") || "—"));
   b.push("Store Manager: " + (g("mgrName") || "—"));
   b.push("TLS: " + g("tlsName"));
-  b.push("Date of Visit: " + g("visitDate"));
   b.push("");
+
+  const flagged = [];
+  INITIATIVES.forEach(init => {
+    init.structured.forEach(s => {
+      const a = answers[`${init.id}.${s.id}`];
+      if (a && a.rating === "No") flagged.push({label: init.label, text: s.text, note: a.note});
+    });
+  });
+  if (flagged.length){
+    b.push(`⚠️ ITEMS NEEDING ATTENTION (${flagged.length})`);
+    b.push(HR);
+    flagged.forEach(f => {
+      b.push(`• [${f.label}] ${f.text}`);
+      if (f.note) b.push(`    Why: ${f.note}`);
+    });
+    b.push("");
+  }
 
   INITIATIVES.forEach(init => {
     b.push(init.name);
-    b.push(line);
+    b.push(HR);
     if (init.hasFocusStore){
       const fs = answers[`${init.id}.focusStore`]?.rating;
-      b.push("Currently a focus store: " + (fs || "—"));
+      b.push("Focus Store: " + (fs || "—"));
       if (fs === "Yes"){
         b.push("  Initial Start Date: " + (document.getElementById(`start-${init.id}`).value || "—"));
         b.push("  Deadline for Completion: " + (document.getElementById(`deadline-${init.id}`).value || "—"));
@@ -701,44 +751,64 @@ async function sendEmail(){
     if (init.hasVisitType){
       b.push("Visit Type: " + (visitType[init.id] || "—"));
     }
+
+    const sections = [];
     init.structured.forEach(s => {
-      const a = answers[`${init.id}.${s.id}`];
-      if (!a || !a.rating) return;
-      b.push(`  ${a.rating === "No" ? "⚠️" : "✅"} ${s.text} — ${a.rating}`);
-      if (a.note) b.push(`     Why: ${a.note}`);
+      const cur = sections[sections.length - 1];
+      if (!cur || cur.section !== s.section) sections.push({section: s.section, items: [s]});
+      else cur.items.push(s);
     });
-    [...new Set(init.structured.map(s => s.section))].forEach(sec => {
-      const p = answers[`${init.id}.section.${sectionSlug(sec)}`];
-      if (p && p.photos && p.photos.length) b.push(`  Photos (${sec}): ${p.photos.length} (sent separately)`);
+    sections.forEach(sec => {
+      const answered = sec.items.filter(s => answers[`${init.id}.${s.id}`]?.rating);
+      const p = answers[`${init.id}.section.${sectionSlug(sec.section)}`];
+      const hasPhotos = p && p.photos && p.photos.length;
+      if (!answered.length && !hasPhotos) return;
+      b.push("");
+      b.push(sec.section + ":");
+      answered.forEach(s => {
+        const a = answers[`${init.id}.${s.id}`];
+        b.push(`  ${a.rating === "No" ? "⚠️" : "✅"} ${s.text} — ${a.rating}`);
+        if (a.note) b.push(`     Why: ${a.note}`);
+      });
+      if (hasPhotos) b.push(`  📷 ${p.photos.length} photo(s) attached`);
     });
+
     const obs = answers[`${init.id}.obs`];
-    if (obs && obs.note) b.push("  Observations: " + obs.note);
-    if (obs && obs.photos && obs.photos.length) b.push(`  Photos: ${obs.photos.length} (sent separately)`);
+    if ((obs && obs.note) || (obs && obs.photos && obs.photos.length)){
+      b.push("");
+      b.push("Observations:");
+      if (obs.note) b.push("  " + obs.note);
+      if (obs.photos && obs.photos.length) b.push(`  📷 ${obs.photos.length} photo(s) attached`);
+    }
     b.push("");
   });
 
   const misc = answers["misc.notes"];
   b.push("STORE HEALTH");
-  b.push(line);
+  b.push(HR);
   b.push((misc && misc.note) || "—");
-  if (misc && misc.photos && misc.photos.length) b.push(`Photos: ${misc.photos.length} (sent separately)`);
+  if (misc && misc.photos && misc.photos.length) b.push(`📷 ${misc.photos.length} photo(s) attached`);
   b.push("");
 
   b.push("VISIT SUMMARY — covered with Store Manager / PIC");
-  b.push(line);
+  b.push(HR);
   b.push("Best Practices Observed:");
-  b.push(g("bestPractices") || "—");
+  b.push("  " + (g("bestPractices") || "—"));
   b.push("");
   b.push("Opportunities for Improvement:");
-  b.push(g("opportunities") || "—");
+  b.push("  " + (g("opportunities") || "—"));
   b.push("");
+
+  b.push(HR);
   b.push("Submitted via Progression Report app");
+  const totalPhotos = orderedPhotos().length;
+  if (totalPhotos) b.push(`${totalPhotos} photo(s) attached, numbered/ordered to match this report`);
 
   const subject = `Progression Report — Store ${g("storeNum")} — ${g("visitDate")}`;
   const to = g("recipients") || "DOusley@houchens.com";
   const bodyText = b.join("\n");
   const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-  const photoFiles = allPhotos().map(p => p.file);
+  const photoFiles = buildPhotoFiles();
 
   if (navigator.share){
     const shareData = {title: subject, text: bodyText};
