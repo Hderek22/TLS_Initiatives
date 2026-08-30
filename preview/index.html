@@ -457,27 +457,43 @@ document.querySelectorAll('.q textarea[data-qid]').forEach(ta => {
 });
 
 /* ================= PHOTO ATTACHMENTS (observations) ================= */
-const PHOTO_MAX_DIM = 1280;
-const PHOTO_QUALITY = 0.6;
-async function compressImage(file, maxDim = PHOTO_MAX_DIM, quality = PHOTO_QUALITY){
+const PHOTO_MAX_DIM = 1024;
+const PHOTO_QUALITY = 0.55;
+const PHOTO_LARGE_WARN_BYTES = 3 * 1024 * 1024; // flag anything this big that slipped through uncompressed
+const PHOTO_TOTAL_WARN_BYTES = 18 * 1024 * 1024; // most mail/share targets start failing around 20-25MB total
+
+/* decode via createImageBitmap first; fall back to an <img> element for formats it can't handle */
+async function decodeImage(file){
+  try { return await createImageBitmap(file); } catch(e){}
+  const url = URL.createObjectURL(file);
   try {
-    const bitmap = await createImageBitmap(file);
-    let {width, height} = bitmap;
-    if (width > maxDim || height > maxDim){
-      const scale = maxDim / Math.max(width, height);
-      width = Math.round(width * scale);
-      height = Math.round(height * scale);
-    }
-    const canvas = document.createElement("canvas");
-    canvas.width = width; canvas.height = height;
-    canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
-    bitmap.close && bitmap.close();
-    const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
-    if (!blob) return file;
-    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", {type: "image/jpeg"});
-  } catch(e){
-    return file; // compression unsupported or failed — attach the original instead
+    return await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = url;
+    });
+  } finally {
+    URL.revokeObjectURL(url);
   }
+}
+async function compressImage(file, maxDim = PHOTO_MAX_DIM, quality = PHOTO_QUALITY){
+  let src;
+  try { src = await decodeImage(file); } catch(e){ return {file, compressed:false}; }
+  let width = src.width, height = src.height;
+  if (width > maxDim || height > maxDim){
+    const scale = maxDim / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = width; canvas.height = height;
+  canvas.getContext("2d").drawImage(src, 0, 0, width, height);
+  if (src.close) src.close();
+  const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
+  if (!blob) return {file, compressed:false};
+  const compressedFile = new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", {type: "image/jpeg"});
+  return {file: compressedFile, compressed:true};
 }
 document.querySelectorAll(".photo-btn").forEach(b => {
   b.addEventListener("click", () => document.getElementById("file-"+cssId(b.dataset.qid)).click());
@@ -490,8 +506,15 @@ document.querySelectorAll('input[type="file"][data-qid]').forEach(inp => {
     if (!files.length) return;
     answers[qid] = answers[qid] || {};
     answers[qid].photos = answers[qid].photos || [];
-    const compressed = await Promise.all(files.map(f => compressImage(f)));
-    compressed.forEach(f => answers[qid].photos.push({file:f, url:URL.createObjectURL(f)}));
+    const results = await Promise.all(files.map(f => compressImage(f)));
+    const oversized = [];
+    results.forEach(r => {
+      answers[qid].photos.push({file:r.file, url:URL.createObjectURL(r.file)});
+      if (!r.compressed && r.file.size > PHOTO_LARGE_WARN_BYTES) oversized.push(r.file.name);
+    });
+    if (oversized.length){
+      toast(`"${oversized[0]}"${oversized.length > 1 ? ` and ${oversized.length - 1} other photo(s)` : ""} couldn't be compressed and ${oversized.length > 1 ? "are" : "is"} large — this may cause sending to fail.`);
+    }
     renderStrip(qid);
     updateShareBtn();
     scheduleSave();
@@ -701,6 +724,13 @@ document.getElementById("submitBtn").addEventListener("click", () => {
     toast(`Enter the Start Date and Deadline for ${missingDates[0].label} since it's marked a focus store.`);
     document.getElementById("reveal-"+cssId(missingDates[0].id+".focusStore")).scrollIntoView({behavior:"smooth", block:"center"});
     return;
+  }
+  const photos = orderedPhotos();
+  const totalPhotoBytes = photos.reduce((sum, p) => sum + p.file.size, 0);
+  if (totalPhotoBytes > PHOTO_TOTAL_WARN_BYTES){
+    const mb = (totalPhotoBytes / (1024 * 1024)).toFixed(1);
+    const proceed = confirm(`You're attaching ${photos.length} photo(s), about ${mb} MB total. Many email/messaging apps cap attachments around 20-25 MB, so this may fail to send. Remove a few photos, or continue anyway?`);
+    if (!proceed) return;
   }
   sendEmail();
 });
