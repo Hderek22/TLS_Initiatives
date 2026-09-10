@@ -734,19 +734,9 @@ document.getElementById("submitBtn").addEventListener("click", () => {
   sendEmail();
 });
 
-async function sendEmail(){
+/* ================= REPORT MODEL (shared by the plain-text and HTML renderers) ================= */
+function buildReportModel(){
   const g = id => document.getElementById(id).value.trim();
-  const HR = "----------------------------------------";
-
-  let b = [];
-  b.push("TLS PROGRESSION REPORT — Store " + (g("storeNum") || "—"));
-  b.push(HR);
-  b.push("Date of Visit: " + (g("visitDate") || "—"));
-  b.push("Store Format: " + (storeFormat || "—"));
-  b.push("Region Number: " + (g("regionNum") || "—"));
-  b.push("Store Manager: " + (g("mgrName") || "—"));
-  b.push("TLS: " + g("tlsName"));
-  b.push("");
 
   const flagged = [];
   INITIATIVES.forEach(init => {
@@ -755,91 +745,262 @@ async function sendEmail(){
       if (a && a.rating === "No") flagged.push({label: init.label, text: s.text, note: a.note});
     });
   });
-  if (flagged.length){
-    b.push(`⚠️ ITEMS NEEDING ATTENTION (${flagged.length})`);
+
+  const initiativeBlocks = INITIATIVES.map(init => {
+    const focusStore = init.hasFocusStore ? {
+      rating: answers[`${init.id}.focusStore`]?.rating,
+      start: document.getElementById(`start-${init.id}`).value,
+      deadline: document.getElementById(`deadline-${init.id}`).value
+    } : null;
+
+    const rawSections = [];
+    init.structured.forEach(s => {
+      const cur = rawSections[rawSections.length - 1];
+      if (!cur || cur.section !== s.section) rawSections.push({section: s.section, items: [s]});
+      else cur.items.push(s);
+    });
+    const sections = rawSections.map(sec => {
+      const answered = sec.items
+        .map(s => ({s, a: answers[`${init.id}.${s.id}`]}))
+        .filter(x => x.a && x.a.rating);
+      const photoAnswer = answers[`${init.id}.section.${sectionSlug(sec.section)}`];
+      const photos = (photoAnswer && photoAnswer.photos) || [];
+      return {section: sec.section, answered, photos};
+    }).filter(sec => sec.answered.length || sec.photos.length);
+
+    const obsAnswer = answers[`${init.id}.obs`];
+    const obs = obsAnswer ? {note: obsAnswer.note || "", photos: obsAnswer.photos || []} : null;
+
+    return {init, focusStore, visitType: init.hasVisitType ? (visitType[init.id] || null) : null, sections, obs};
+  });
+
+  const miscAnswer = answers["misc.notes"];
+
+  return {
+    storeNum: g("storeNum"), visitDate: g("visitDate"), storeFormat, regionNum: g("regionNum"),
+    mgrName: g("mgrName"), tlsName: g("tlsName"),
+    flagged, initiativeBlocks,
+    storeHealth: {note: (miscAnswer && miscAnswer.note) || "", photos: (miscAnswer && miscAnswer.photos) || []},
+    bestPractices: g("bestPractices"), opportunities: g("opportunities"),
+    recipients: g("recipients") || "DOusley@houchens.com",
+    subject: `Progression Report — Store ${g("storeNum")} — ${g("visitDate")}`
+  };
+}
+
+function renderPlainText(m){
+  const HR = "----------------------------------------";
+  let b = [];
+  b.push("TLS PROGRESSION REPORT — Store " + (m.storeNum || "—"));
+  b.push(HR);
+  b.push("Date of Visit: " + (m.visitDate || "—"));
+  b.push("Store Format: " + (m.storeFormat || "—"));
+  b.push("Region Number: " + (m.regionNum || "—"));
+  b.push("Store Manager: " + (m.mgrName || "—"));
+  b.push("TLS: " + m.tlsName);
+  b.push("");
+
+  if (m.flagged.length){
+    b.push(`⚠️ ITEMS NEEDING ATTENTION (${m.flagged.length})`);
     b.push(HR);
-    flagged.forEach(f => {
+    m.flagged.forEach(f => {
       b.push(`• [${f.label}] ${f.text}`);
       if (f.note) b.push(`    Why: ${f.note}`);
     });
     b.push("");
   }
 
-  INITIATIVES.forEach(init => {
-    b.push(init.name);
+  m.initiativeBlocks.forEach(block => {
+    b.push(block.init.name);
     b.push(HR);
-    if (init.hasFocusStore){
-      const fs = answers[`${init.id}.focusStore`]?.rating;
-      b.push("Focus Store: " + (fs || "—"));
-      if (fs === "Yes"){
-        b.push("  Initial Start Date: " + (document.getElementById(`start-${init.id}`).value || "—"));
-        b.push("  Deadline for Completion: " + (document.getElementById(`deadline-${init.id}`).value || "—"));
+    if (block.focusStore){
+      b.push("Focus Store: " + (block.focusStore.rating || "—"));
+      if (block.focusStore.rating === "Yes"){
+        b.push("  Initial Start Date: " + (block.focusStore.start || "—"));
+        b.push("  Deadline for Completion: " + (block.focusStore.deadline || "—"));
       }
     }
-    if (init.hasVisitType){
-      b.push("Visit Type: " + (visitType[init.id] || "—"));
-    }
+    if (block.visitType) b.push("Visit Type: " + block.visitType);
 
-    const sections = [];
-    init.structured.forEach(s => {
-      const cur = sections[sections.length - 1];
-      if (!cur || cur.section !== s.section) sections.push({section: s.section, items: [s]});
-      else cur.items.push(s);
-    });
-    sections.forEach(sec => {
-      const answered = sec.items.filter(s => answers[`${init.id}.${s.id}`]?.rating);
-      const p = answers[`${init.id}.section.${sectionSlug(sec.section)}`];
-      const hasPhotos = p && p.photos && p.photos.length;
-      if (!answered.length && !hasPhotos) return;
+    block.sections.forEach(sec => {
       b.push("");
       b.push(sec.section + ":");
-      answered.forEach(s => {
-        const a = answers[`${init.id}.${s.id}`];
+      sec.answered.forEach(({s, a}) => {
         b.push(`  ${a.rating === "No" ? "⚠️" : "✅"} ${s.text} — ${a.rating}`);
         if (a.note) b.push(`     Why: ${a.note}`);
       });
-      if (hasPhotos) b.push(`  📷 ${p.photos.length} photo(s) attached`);
+      if (sec.photos.length) b.push(`  📷 ${sec.photos.length} photo(s) attached`);
     });
 
-    const obs = answers[`${init.id}.obs`];
-    if ((obs && obs.note) || (obs && obs.photos && obs.photos.length)){
+    if (block.obs && (block.obs.note || block.obs.photos.length)){
       b.push("");
       b.push("Observations:");
-      if (obs.note) b.push("  " + obs.note);
-      if (obs.photos && obs.photos.length) b.push(`  📷 ${obs.photos.length} photo(s) attached`);
+      if (block.obs.note) b.push("  " + block.obs.note);
+      if (block.obs.photos.length) b.push(`  📷 ${block.obs.photos.length} photo(s) attached`);
     }
     b.push("");
   });
 
-  const misc = answers["misc.notes"];
   b.push("STORE HEALTH");
   b.push(HR);
-  b.push((misc && misc.note) || "—");
-  if (misc && misc.photos && misc.photos.length) b.push(`📷 ${misc.photos.length} photo(s) attached`);
+  b.push(m.storeHealth.note || "—");
+  if (m.storeHealth.photos.length) b.push(`📷 ${m.storeHealth.photos.length} photo(s) attached`);
   b.push("");
 
   b.push("VISIT SUMMARY — covered with Store Manager / PIC");
   b.push(HR);
   b.push("Best Practices Observed:");
-  b.push("  " + (g("bestPractices") || "—"));
+  b.push("  " + (m.bestPractices || "—"));
   b.push("");
   b.push("Opportunities for Improvement:");
-  b.push("  " + (g("opportunities") || "—"));
+  b.push("  " + (m.opportunities || "—"));
   b.push("");
 
   b.push(HR);
   b.push("Submitted via Progression Report app");
-  const totalPhotos = orderedPhotos().length;
+  const totalPhotos = m.initiativeBlocks.reduce((sum, blk) =>
+    sum + blk.sections.reduce((s2, sec) => s2 + sec.photos.length, 0) + (blk.obs ? blk.obs.photos.length : 0), 0
+  ) + m.storeHealth.photos.length;
   if (totalPhotos) b.push(`${totalPhotos} photo(s) attached, numbered/ordered to match this report`);
 
-  const subject = `Progression Report — Store ${g("storeNum")} — ${g("visitDate")}`;
-  const to = g("recipients") || "DOusley@houchens.com";
-  const bodyText = b.join("\n");
-  const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+  return b.join("\n");
+}
+
+/* ================= HTML RENDERER (relay path — real inline photos via CID) ================= */
+function escapeHtml(str){
+  return (str || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+}
+function htmlText(str){ return escapeHtml(str).replace(/\n/g, "<br>"); }
+async function fileToBase64(file){
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize){
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function renderHtml(m){
+  const attachments = [];
+  let cidCounter = 0;
+  async function photoImgTags(photos, label){
+    let tags = "";
+    for (const p of photos){
+      cidCounter++;
+      const cid = `photo${cidCounter}`;
+      const ext = (p.file.name.match(/\.\w+$/) || [".jpg"])[0];
+      const safeLabel = label.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      attachments.push({
+        filename: `${String(cidCounter).padStart(2, "0")}_${safeLabel}${ext}`,
+        contentType: p.file.type || "image/jpeg",
+        contentBase64: await fileToBase64(p.file),
+        cid
+      });
+      tags += `<img src="cid:${cid}" alt="${escapeHtml(label)} photo" style="max-width:280px;width:100%;height:auto;border-radius:8px;border:1px solid #e2e1d9;margin:6px 6px 0 0">`;
+    }
+    return tags ? `<div style="margin-top:8px">${tags}</div>` : "";
+  }
+
+  const hStyle = "font:700 15px -apple-system,Segoe UI,Roboto,sans-serif;color:#14532d;margin:22px 0 6px;border-bottom:2px solid #14532d;padding-bottom:4px";
+  const subStyle = "font:700 13px -apple-system,Segoe UI,Roboto,sans-serif;color:#14532d;margin:14px 0 4px";
+  const pStyle = "font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#1c2b26;margin:4px 0";
+  const whyStyle = "font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#5a6b64;margin:2px 0 2px 18px";
+
+  let html = `<div style="max-width:640px;margin:0 auto">`;
+  html += `<h1 style="font:800 18px -apple-system,Segoe UI,Roboto,sans-serif;color:#14532d;margin:0 0 4px">TLS Progression Report — Store ${escapeHtml(m.storeNum || "—")}</h1>`;
+  html += `<p style="${pStyle}">Date of Visit: ${escapeHtml(m.visitDate || "—")}<br>Store Format: ${escapeHtml(m.storeFormat || "—")}<br>Region Number: ${escapeHtml(m.regionNum || "—")}<br>Store Manager: ${escapeHtml(m.mgrName || "—")}<br>TLS: ${escapeHtml(m.tlsName)}</p>`;
+
+  if (m.flagged.length){
+    html += `<div style="${hStyle}">⚠️ Items Needing Attention (${m.flagged.length})</div>`;
+    m.flagged.forEach(f => {
+      html += `<p style="${pStyle}"><b>[${escapeHtml(f.label)}]</b> ${escapeHtml(f.text)}</p>`;
+      if (f.note) html += `<p style="${whyStyle}">Why: ${htmlText(f.note)}</p>`;
+    });
+  }
+
+  for (const block of m.initiativeBlocks){
+    html += `<div style="${hStyle}">${escapeHtml(block.init.name)}</div>`;
+    if (block.focusStore){
+      html += `<p style="${pStyle}">Focus Store: ${escapeHtml(block.focusStore.rating || "—")}</p>`;
+      if (block.focusStore.rating === "Yes"){
+        html += `<p style="${pStyle}">Start: ${escapeHtml(block.focusStore.start || "—")} &nbsp;&nbsp; Deadline: ${escapeHtml(block.focusStore.deadline || "—")}</p>`;
+      }
+    }
+    if (block.visitType) html += `<p style="${pStyle}">Visit Type: ${escapeHtml(block.visitType)}</p>`;
+
+    for (const sec of block.sections){
+      html += `<div style="${subStyle}">${escapeHtml(sec.section)}</div>`;
+      for (const {s, a} of sec.answered){
+        html += `<p style="${pStyle}">${a.rating === "No" ? "⚠️" : "✅"} ${escapeHtml(s.text)} — ${a.rating}</p>`;
+        if (a.note) html += `<p style="${whyStyle}">Why: ${htmlText(a.note)}</p>`;
+      }
+      html += await photoImgTags(sec.photos, `${block.init.label} - ${sec.section}`);
+    }
+
+    if (block.obs && (block.obs.note || block.obs.photos.length)){
+      html += `<div style="${subStyle}">Observations</div>`;
+      if (block.obs.note) html += `<p style="${pStyle}">${htmlText(block.obs.note)}</p>`;
+      html += await photoImgTags(block.obs.photos, `${block.init.label} - Observations`);
+    }
+  }
+
+  html += `<div style="${hStyle}">Store Health</div>`;
+  html += `<p style="${pStyle}">${htmlText(m.storeHealth.note || "—")}</p>`;
+  html += await photoImgTags(m.storeHealth.photos, "Store Health");
+
+  html += `<div style="${hStyle}">Visit Summary</div>`;
+  html += `<p style="${pStyle}"><b>Best Practices Observed:</b><br>${htmlText(m.bestPractices || "—")}</p>`;
+  html += `<p style="${pStyle}"><b>Opportunities for Improvement:</b><br>${htmlText(m.opportunities || "—")}</p>`;
+
+  html += `<p style="font:12px -apple-system,Segoe UI,Roboto,sans-serif;color:#5a6b64;margin-top:20px">Submitted via Progression Report app</p>`;
+  html += `</div>`;
+
+  return {html, attachments};
+}
+
+/* ================= RELAY (sends real HTML email w/ inline photos; falls back silently if unset/unreachable) ================= */
+const RELAY_URL = ""; // set after deploying worker/report-relay.js, e.g. "https://tls-report-relay.<you>.workers.dev"
+const RELAY_SHARED_SECRET = ""; // must match the Worker's RELAY_SHARED_SECRET secret — see worker/README.md
+const RELAY_MAX_BYTES = 35 * 1024 * 1024; // stays under Resend's 40MB (post-base64) attachment cap with margin
+
+async function sendViaRelay(m, html, text, attachments){
+  if (!RELAY_URL) return false;
+  const totalBase64Chars = attachments.reduce((sum, a) => sum + a.contentBase64.length, 0);
+  if (totalBase64Chars * 0.75 > RELAY_MAX_BYTES) return false; // too large — let the share/mailto fallback handle it
+  try {
+    const res = await fetch(RELAY_URL, {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-Relay-Secret": RELAY_SHARED_SECRET},
+      body: JSON.stringify({
+        to: m.recipients.split(",").map(s => s.trim()).filter(Boolean),
+        subject: m.subject,
+        html, text, attachments
+      })
+    });
+    return res.ok;
+  } catch(e){
+    return false;
+  }
+}
+
+async function sendEmail(){
+  const m = buildReportModel();
+  const bodyText = renderPlainText(m);
+
+  if (RELAY_URL){
+    const {html, attachments} = await renderHtml(m);
+    if (await sendViaRelay(m, html, bodyText, attachments)){
+      clearDraft();
+      toast("Report sent!");
+      return;
+    }
+  }
+
+  const url = `mailto:${encodeURIComponent(m.recipients)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(bodyText)}`;
   const photoFiles = buildPhotoFiles();
 
   if (navigator.share){
-    const shareData = {title: subject, text: bodyText};
+    const shareData = {title: m.subject, text: bodyText};
     if (photoFiles.length && navigator.canShare && navigator.canShare({files: photoFiles})){
       shareData.files = photoFiles;
     }
