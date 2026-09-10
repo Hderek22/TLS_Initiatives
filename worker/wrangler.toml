@@ -1,0 +1,10 @@
+name = "tls-report-relay"
+main = "report-relay.js"
+compatibility_date = "2026-09-10"
+
+[vars]
+ALLOWED_ORIGIN = "https://hderek22.github.io"
+FROM_ADDRESS = "Progression Report <reports@yourdomain.com>"
+
+# RESEND_API_KEY and RELAY_SHARED_SECRET are secrets, not vars — never put them
+# here. Set them with `wrangler secret put <NAME>` (see README.md).
