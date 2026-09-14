@@ -959,8 +959,8 @@ async function renderHtml(m){
 }
 
 /* ================= RELAY (sends real HTML email w/ inline photos; falls back silently if unset/unreachable) ================= */
-const RELAY_URL = ""; // set after deploying worker/report-relay.js, e.g. "https://tls-report-relay.<you>.workers.dev"
-const RELAY_SHARED_SECRET = ""; // must match the Worker's RELAY_SHARED_SECRET secret — see worker/README.md
+const RELAY_URL = "https://crimson-shape-76f1.hderek22.workers.dev";
+const RELAY_SHARED_SECRET = "Oneverylongsharedsecretkeyphrase!"; // must match the Worker's RELAY_SHARED_SECRET secret — see worker/README.md
 const RELAY_MAX_BYTES = 35 * 1024 * 1024; // stays under Resend's 40MB (post-base64) attachment cap with margin
 
 async function sendViaRelay(m, html, text, attachments){
