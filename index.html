@@ -85,6 +85,8 @@
   }
   .dept-head h2{font-size:1rem;font-weight:800;letter-spacing:.03em}
   .dept-head .count{font-size:.72rem;background:rgba(255,255,255,.16);border-radius:20px;padding:3px 10px;font-variant-numeric:tabular-nums}
+  .sop-link{font-size:.68rem;font-weight:700;font-family:inherit;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 10px;margin-right:8px;white-space:nowrap;cursor:pointer}
+  .sop-link:active{background:rgba(255,255,255,.3)}
   .dept-head .caret{margin-left:10px;transition:transform .2s}
   .dept-head.open .caret{transform:rotate(180deg)}
   .dept-body{display:none}
@@ -301,7 +303,7 @@ INITIATIVES.forEach((init, ii) => {
 
   const head = document.createElement("div");
   head.className = "dept-head" + (ii===0 ? " open" : "");
-  head.innerHTML = `<h2>${init.name}</h2><span style="display:flex;align-items:center">${initTotal ? `<span class="count" id="cnt-${init.id}"></span>` : ""}<span class="caret">▾</span></span>`;
+  head.innerHTML = `<h2>${init.name}</h2><span style="display:flex;align-items:center">${init.sop ? `<button type="button" class="sop-link" data-sop="${init.sop}" data-title="${init.label} SOP" onclick="event.stopPropagation()">📄 SOP</button>` : ""}${initTotal ? `<span class="count" id="cnt-${init.id}"></span>` : ""}<span class="caret">▾</span></span>`;
   const body = document.createElement("div");
   body.className = "dept-body" + (ii===0 ? " open" : "");
 
@@ -410,6 +412,30 @@ document.querySelectorAll(".visit-type-chips").forEach(row => {
     refresh();
     scheduleSave();
   });
+});
+
+/* ================= SOP SHARING =================
+   Uses the native share sheet instead of an in-app overlay or a new tab/window — it opens as a
+   system modal on top of the app and never navigates away, so it can't knock the user out of an
+   installed/standalone PWA mid-store-walk. The share sheet itself lets the user preview (view) the
+   PDF or pick Mail (or anything else) to send it. */
+async function shareSop(url, title){
+  try {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    const file = new File([blob], title.replace(/[^a-zA-Z0-9]+/g, "_") + ".pdf", {type: "application/pdf"});
+    if (navigator.canShare && navigator.canShare({files: [file]})){
+      await navigator.share({files: [file], title});
+      return;
+    }
+  } catch(e){
+    if (e.name === "AbortError") return; // user cancelled the share sheet
+    // fetch/share failed for another reason — fall back to opening the PDF directly below
+  }
+  window.open(url, "_blank", "noopener");
+}
+document.querySelectorAll(".sop-link").forEach(btn => {
+  btn.addEventListener("click", () => shareSop(btn.dataset.sop, btn.dataset.title));
 });
 
 /* ================= YES/NO BUTTONS ================= */
