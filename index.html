@@ -889,6 +889,7 @@ async function renderHtml(m){
   const whyStyle = "font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#5a6b64;margin:2px 0 2px 18px";
   const GREEN = "#14532d";
   const FLAG = "#b91c1c";
+  const flagStyle = `font:700 14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:${FLAG};margin:4px 0`;
   // Each section is its own bordered, colored-header "card" — so a section (e.g. GB Markdown) can be
   // cleanly selected and copy-pasted out of the email on its own, without dragging in the rest of the report.
   function cardOpen(title, accent){
@@ -907,8 +908,7 @@ async function renderHtml(m){
     const hasContent = block.focusStore || block.visitType || block.sections.length ||
       (block.obs && (block.obs.note || block.obs.photos.length));
     if (!hasContent) continue;
-    const hasFlag = block.sections.some(sec => sec.answered.some(({a}) => a.rating === "No"));
-    html += cardOpen(escapeHtml(block.init.name) + (hasFlag ? " ⚠️" : ""), hasFlag ? FLAG : GREEN);
+    html += cardOpen(escapeHtml(block.init.name), GREEN);
     if (block.focusStore){
       html += `<p style="${pStyle}">Focus Store: ${escapeHtml(block.focusStore.rating || "—")}</p>`;
       if (block.focusStore.rating === "Yes"){
@@ -920,7 +920,7 @@ async function renderHtml(m){
     for (const sec of block.sections){
       html += `<div style="${subStyle}">${escapeHtml(sec.section)}</div>`;
       for (const {s, a} of sec.answered){
-        html += `<p style="${pStyle}">${a.rating === "No" ? "⚠️" : "✅"} ${escapeHtml(s.text)} — ${a.rating}</p>`;
+        html += `<p style="${a.rating === "No" ? flagStyle : pStyle}">${a.rating === "No" ? "⚠️" : "✅"} ${escapeHtml(s.text)} — ${a.rating}</p>`;
         if (a.note) html += `<p style="${whyStyle}">Why: ${htmlText(a.note)}</p>`;
       }
       html += await photoImgTags(sec.photos, `${block.init.label} - ${sec.section}`);
