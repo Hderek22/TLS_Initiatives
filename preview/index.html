@@ -35,7 +35,6 @@
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:var(--paper);color:var(--ink);
-    padding-bottom:110px;
   }
   /* ---------- header ---------- */
   header{
@@ -120,10 +119,12 @@
   .photo-thumb .rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:.7rem;line-height:20px;padding:0;cursor:pointer}
   .share-photos-btn{background:#fff;border:1.5px solid var(--green);color:var(--green);border-radius:12px;padding:12px 10px;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap}
   /* ---------- footer bar ---------- */
+  /* Not fixed/floating on purpose — it only comes into view once the user scrolls all
+     the way to the bottom of the report, so it can't be tapped by accident mid-scroll. */
   .footbar{
-    position:fixed;bottom:0;left:0;right:0;z-index:60;
     background:#fff;border-top:1px solid var(--line);
-    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+    margin-top:10px;
   }
   .footbar-inner{max-width:640px;margin:0 auto;display:flex;gap:10px;align-items:center}
   .attn-pill{font-size:.72rem;font-weight:700;color:var(--ink-soft);white-space:nowrap}
@@ -133,9 +134,11 @@
     padding:14px;font-size:1rem;font-weight:800;letter-spacing:.02em;cursor:pointer;
   }
   .submit-btn:active{transform:scale(.985)}
+  .submit-btn:disabled{background:var(--ink-soft);opacity:.5;cursor:not-allowed}
+  .submit-btn:disabled:active{transform:none}
   /* toast */
   .toast{
-    position:fixed;left:50%;bottom:90px;transform:translateX(-50%);
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
     background:var(--ink);color:#fff;font-size:.85rem;padding:10px 18px;border-radius:24px;
     opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;max-width:88%;text-align:center;
   }
@@ -599,6 +602,13 @@ ALL_FIELD_IDS.forEach(id => {
   document.getElementById(id).addEventListener("input", scheduleSave);
 });
 
+/* Submit stays disabled until the recipients field holds a well-formed email (or list of them) */
+function updateSubmitEnabled(){
+  document.getElementById("submitBtn").disabled = !document.getElementById("recipients").checkValidity();
+}
+document.getElementById("recipients").addEventListener("input", updateSubmitEnabled);
+updateSubmitEnabled();
+
 /* ================= DRAFT AUTOSAVE ================= */
 const DRAFT_KEY = "tlsInitDraft";
 let saveTimer;
@@ -625,6 +635,7 @@ function applyDraft(draft){
   ALL_FIELD_IDS.forEach(id => {
     if (f[id] !== undefined) document.getElementById(id).value = f[id];
   });
+  updateSubmitEnabled();
   if (draft.storeFormat){
     storeFormat = draft.storeFormat;
     document.querySelectorAll("#fmtChips .chip").forEach(x => x.classList.toggle("sel", x.dataset.v === storeFormat));
