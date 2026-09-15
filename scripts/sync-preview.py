@@ -42,6 +42,15 @@ def main():
         out_lines.append(line.replace('href="icons/', 'href="../icons/'))
     html = "".join(out_lines)
 
+    # Purple-accented icons/theme so the preview build is visually distinct from the
+    # live green app if added to a home screen — see icons/icon-*-preview.png.
+    html = html.replace('href="../icons/icon-512.png"', 'href="../icons/icon-512-preview.png"')
+    html = html.replace('href="../icons/icon-180.png"', 'href="../icons/icon-180-preview.png"')
+    html = html.replace(
+        '<meta name="theme-color" content="#14532d">',
+        '<meta name="theme-color" content="#2a1453">',
+    )
+
     html = html.replace(
         "<title>Progression Report</title>",
         "<title>Progression Report (Preview)</title>",
