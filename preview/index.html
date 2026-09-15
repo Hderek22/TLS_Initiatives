@@ -901,25 +901,39 @@ async function renderHtml(m){
     return tags ? `<div style="margin-top:8px">${tags}</div>` : "";
   }
 
-  const hStyle = "font:700 15px -apple-system,Segoe UI,Roboto,sans-serif;color:#14532d;margin:22px 0 6px;border-bottom:2px solid #14532d;padding-bottom:4px";
   const subStyle = "font:700 13px -apple-system,Segoe UI,Roboto,sans-serif;color:#14532d;margin:14px 0 4px";
   const pStyle = "font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#1c2b26;margin:4px 0";
   const whyStyle = "font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#5a6b64;margin:2px 0 2px 18px";
+  const GREEN = "#14532d";
+  const FLAG = "#b91c1c";
+  // Each section is its own bordered, colored-header "card" — so a section (e.g. GB Markdown) can be
+  // cleanly selected and copy-pasted out of the email on its own, without dragging in the rest of the report.
+  function cardOpen(title, accent){
+    return `<div style="border:1px solid #e2e1d9;border-left:4px solid ${accent};border-radius:10px;overflow:hidden;margin:0 0 18px">` +
+      `<div style="background:${accent};color:#ffffff;font:700 15px -apple-system,Segoe UI,Roboto,sans-serif;padding:10px 16px">${title}</div>` +
+      `<div style="padding:14px 16px">`;
+  }
+  const cardClose = "</div></div>";
 
   let html = `<div style="max-width:640px;margin:0 auto">`;
-  html += `<h1 style="font:800 18px -apple-system,Segoe UI,Roboto,sans-serif;color:#14532d;margin:0 0 4px">TLS Progression Report — Store ${escapeHtml(m.storeNum || "—")}</h1>`;
+  html += `<h1 style="font:800 18px -apple-system,Segoe UI,Roboto,sans-serif;color:${GREEN};margin:0 0 4px">TLS Progression Report — Store ${escapeHtml(m.storeNum || "—")}</h1>`;
   html += `<p style="${pStyle}">Date of Visit: ${escapeHtml(m.visitDate || "—")}<br>Store Format: ${escapeHtml(m.storeFormat || "—")}<br>Region Number: ${escapeHtml(m.regionNum || "—")}<br>Store Manager: ${escapeHtml(m.mgrName || "—")}<br>TLS: ${escapeHtml(m.tlsName)}</p>`;
+  html += `<div style="margin:18px 0"></div>`;
 
   if (m.flagged.length){
-    html += `<div style="${hStyle}">⚠️ Items Needing Attention (${m.flagged.length})</div>`;
+    html += cardOpen(`⚠️ Items Needing Attention (${m.flagged.length})`, FLAG);
     m.flagged.forEach(f => {
       html += `<p style="${pStyle}"><b>[${escapeHtml(f.label)}]</b> ${escapeHtml(f.text)}</p>`;
       if (f.note) html += `<p style="${whyStyle}">Why: ${htmlText(f.note)}</p>`;
     });
+    html += cardClose;
   }
 
   for (const block of m.initiativeBlocks){
-    html += `<div style="${hStyle}">${escapeHtml(block.init.name)}</div>`;
+    const hasContent = block.focusStore || block.visitType || block.sections.length ||
+      (block.obs && (block.obs.note || block.obs.photos.length));
+    if (!hasContent) continue;
+    html += cardOpen(escapeHtml(block.init.name), GREEN);
     if (block.focusStore){
       html += `<p style="${pStyle}">Focus Store: ${escapeHtml(block.focusStore.rating || "—")}</p>`;
       if (block.focusStore.rating === "Yes"){
@@ -942,15 +956,18 @@ async function renderHtml(m){
       if (block.obs.note) html += `<p style="${pStyle}">${htmlText(block.obs.note)}</p>`;
       html += await photoImgTags(block.obs.photos, `${block.init.label} - Observations`);
     }
+    html += cardClose;
   }
 
-  html += `<div style="${hStyle}">Store Health</div>`;
+  html += cardOpen("Store Health", GREEN);
   html += `<p style="${pStyle}">${htmlText(m.storeHealth.note || "—")}</p>`;
   html += await photoImgTags(m.storeHealth.photos, "Store Health");
+  html += cardClose;
 
-  html += `<div style="${hStyle}">Visit Summary</div>`;
+  html += cardOpen("Visit Summary", GREEN);
   html += `<p style="${pStyle}"><b>Best Practices Observed:</b><br>${htmlText(m.bestPractices || "—")}</p>`;
   html += `<p style="${pStyle}"><b>Opportunities for Improvement:</b><br>${htmlText(m.opportunities || "—")}</p>`;
+  html += cardClose;
 
   html += `<p style="font:12px -apple-system,Segoe UI,Roboto,sans-serif;color:#5a6b64;margin-top:20px">Submitted via Progression Report app</p>`;
   html += `</div>`;
