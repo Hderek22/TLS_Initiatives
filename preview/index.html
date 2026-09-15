@@ -738,14 +738,6 @@ document.getElementById("submitBtn").addEventListener("click", () => {
 function buildReportModel(){
   const g = id => document.getElementById(id).value.trim();
 
-  const flagged = [];
-  INITIATIVES.forEach(init => {
-    init.structured.forEach(s => {
-      const a = answers[`${init.id}.${s.id}`];
-      if (a && a.rating === "No") flagged.push({label: init.label, text: s.text, note: a.note});
-    });
-  });
-
   const initiativeBlocks = INITIATIVES.map(init => {
     const focusStore = init.hasFocusStore ? {
       rating: answers[`${init.id}.focusStore`]?.rating,
@@ -779,7 +771,7 @@ function buildReportModel(){
   return {
     storeNum: g("storeNum"), visitDate: g("visitDate"), storeFormat, regionNum: g("regionNum"),
     mgrName: g("mgrName"), tlsName: g("tlsName"),
-    flagged, initiativeBlocks,
+    initiativeBlocks,
     storeHealth: {note: (miscAnswer && miscAnswer.note) || "", photos: (miscAnswer && miscAnswer.photos) || []},
     bestPractices: g("bestPractices"), opportunities: g("opportunities"),
     recipients: g("recipients") || "DOusley@houchens.com",
@@ -798,16 +790,6 @@ function renderPlainText(m){
   b.push("Store Manager: " + (m.mgrName || "—"));
   b.push("TLS: " + m.tlsName);
   b.push("");
-
-  if (m.flagged.length){
-    b.push(`⚠️ ITEMS NEEDING ATTENTION (${m.flagged.length})`);
-    b.push(HR);
-    m.flagged.forEach(f => {
-      b.push(`• [${f.label}] ${f.text}`);
-      if (f.note) b.push(`    Why: ${f.note}`);
-    });
-    b.push("");
-  }
 
   m.initiativeBlocks.forEach(block => {
     b.push(block.init.name);
@@ -920,20 +902,12 @@ async function renderHtml(m){
   html += `<p style="${pStyle}">Date of Visit: ${escapeHtml(m.visitDate || "—")}<br>Store Format: ${escapeHtml(m.storeFormat || "—")}<br>Region Number: ${escapeHtml(m.regionNum || "—")}<br>Store Manager: ${escapeHtml(m.mgrName || "—")}<br>TLS: ${escapeHtml(m.tlsName)}</p>`;
   html += `<div style="margin:18px 0"></div>`;
 
-  if (m.flagged.length){
-    html += cardOpen(`⚠️ Items Needing Attention (${m.flagged.length})`, FLAG);
-    m.flagged.forEach(f => {
-      html += `<p style="${pStyle}"><b>[${escapeHtml(f.label)}]</b> ${escapeHtml(f.text)}</p>`;
-      if (f.note) html += `<p style="${whyStyle}">Why: ${htmlText(f.note)}</p>`;
-    });
-    html += cardClose;
-  }
-
   for (const block of m.initiativeBlocks){
     const hasContent = block.focusStore || block.visitType || block.sections.length ||
       (block.obs && (block.obs.note || block.obs.photos.length));
     if (!hasContent) continue;
-    html += cardOpen(escapeHtml(block.init.name), GREEN);
+    const hasFlag = block.sections.some(sec => sec.answered.some(({a}) => a.rating === "No"));
+    html += cardOpen(escapeHtml(block.init.name) + (hasFlag ? " ⚠️" : ""), hasFlag ? FLAG : GREEN);
     if (block.focusStore){
       html += `<p style="${pStyle}">Focus Store: ${escapeHtml(block.focusStore.rating || "—")}</p>`;
       if (block.focusStore.rating === "Yes"){
