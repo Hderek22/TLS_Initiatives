@@ -1,19 +1,38 @@
 #!/usr/bin/env python3
-"""Regenerate preview/index.html from the testing branch's index.html.
+"""Regenerate preview/ from the testing branch: index.html plus a mirror of sop/.
 
 Run this from a checkout of main whenever testing has changes worth
-previewing, then commit and push preview/index.html:
+previewing, then commit and push preview/:
 
     python3 scripts/sync-preview.py
-    git add preview/index.html
+    git add preview/
     git commit -m "Sync preview with testing"
     git push origin main
 """
+import shutil
 import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_PATH = REPO_ROOT / "preview" / "index.html"
+SOP_OUT = REPO_ROOT / "preview" / "sop"
+
+
+def mirror_sops():
+    """Copy testing's sop/ into preview/sop/ so the preview uses testing's SOP files, not main's."""
+    paths = subprocess.run(
+        ["git", "ls-tree", "-r", "--name-only", "testing", "sop/"],
+        cwd=REPO_ROOT, check=True, capture_output=True, text=True,
+    ).stdout.split()
+    if SOP_OUT.exists():
+        shutil.rmtree(SOP_OUT)
+    SOP_OUT.mkdir(parents=True)
+    for path in paths:
+        data = subprocess.run(
+            ["git", "show", f"testing:{path}"], cwd=REPO_ROOT, check=True, capture_output=True,
+        ).stdout
+        (SOP_OUT / Path(path).name).write_bytes(data)
+    print(f"Mirrored {len(paths)} SOP file(s) into {SOP_OUT}")
 
 BANNER = (
     '<div style="background:#7c3aed;color:#fff;text-align:center;'
@@ -65,6 +84,7 @@ def main():
     OUT_PATH.parent.mkdir(exist_ok=True)
     OUT_PATH.write_text(html)
     print(f"Wrote {OUT_PATH}")
+    mirror_sops()
 
 
 if __name__ == "__main__":
