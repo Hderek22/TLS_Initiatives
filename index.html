@@ -35,7 +35,6 @@
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:var(--paper);color:var(--ink);
-    padding-bottom:110px;
   }
   /* ---------- header ---------- */
   header{
@@ -44,12 +43,13 @@
     padding:12px 16px 10px;
     box-shadow:0 2px 8px rgba(0,0,0,.18);
   }
-  .new-report-btn{
-    position:absolute;top:10px;right:14px;
+  .hdr-top{display:flex;align-items:center;gap:8px}
+  .hdr-actions{display:flex;gap:6px;flex-shrink:0}
+  .hdr-btn,.sop-bar button{
     background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;
-    border-radius:20px;padding:5px 10px;font-size:.68rem;font-weight:700;cursor:pointer;
+    border-radius:20px;padding:5px 10px;font-size:.68rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;
   }
-  header h1{font-size:1rem;font-weight:700;letter-spacing:.02em;padding-right:70px}
+  header h1{flex:1;min-width:0;font-size:1rem;font-weight:700;letter-spacing:.02em}
   header .sub{font-size:.72rem;opacity:.75;margin-top:2px}
   .progress-wrap{margin-top:8px;display:flex;align-items:center;gap:10px}
   .progress-bar{flex:1;height:6px;background:rgba(255,255,255,.22);border-radius:3px;overflow:hidden}
@@ -68,6 +68,7 @@
     width:100%;border:1.5px solid var(--line);border-radius:10px;background:#fff;
     padding:11px 12px;font-size:1rem;font-family:inherit;color:var(--ink);
   }
+  input[type=date]{-webkit-appearance:none;appearance:none;}
   input:focus,textarea:focus{outline:none;border-color:var(--green)}
   textarea{resize:vertical;min-height:74px;line-height:1.45}
   /* chips (store format, visit-type, yes/no-as-chips reveal groups) */
@@ -120,10 +121,12 @@
   .photo-thumb .rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:.7rem;line-height:20px;padding:0;cursor:pointer}
   .share-photos-btn{background:#fff;border:1.5px solid var(--green);color:var(--green);border-radius:12px;padding:12px 10px;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap}
   /* ---------- footer bar ---------- */
+  /* Not fixed/floating on purpose — it only comes into view once the user scrolls all
+     the way to the bottom of the report, so it can't be tapped by accident mid-scroll. */
   .footbar{
-    position:fixed;bottom:0;left:0;right:0;z-index:60;
     background:#fff;border-top:1px solid var(--line);
-    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+    margin-top:10px;
   }
   .footbar-inner{max-width:640px;margin:0 auto;display:flex;gap:10px;align-items:center}
   .attn-pill{font-size:.72rem;font-weight:700;color:var(--ink-soft);white-space:nowrap}
@@ -133,13 +136,37 @@
     padding:14px;font-size:1rem;font-weight:800;letter-spacing:.02em;cursor:pointer;
   }
   .submit-btn:active{transform:scale(.985)}
+  .submit-btn:disabled{background:var(--ink-soft);opacity:.5;cursor:not-allowed}
+  .submit-btn:disabled:active{transform:none}
   /* toast */
   .toast{
-    position:fixed;left:50%;bottom:90px;transform:translateX(-50%);
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
     background:var(--ink);color:#fff;font-size:.85rem;padding:10px 18px;border-radius:24px;
     opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;max-width:88%;text-align:center;
   }
   .toast.show{opacity:1}
+  [hidden]{display:none!important}
+  /* ---------- SOP library + viewer (full-screen panel over the report; the report underneath is untouched) ---------- */
+  .sop-panel{position:fixed;inset:0;z-index:200;background:var(--paper);display:flex;flex-direction:column}
+  .sop-bar{
+    display:flex;align-items:center;gap:6px;background:var(--green-deep);color:#fff;
+    padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));
+  }
+  .sop-bar h2{flex:1;min-width:0;font-size:.95rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sop-bar button{padding:6px 11px;font-size:.75rem}
+  .sop-bar button:disabled{opacity:.4;cursor:default}
+  .sop-list{flex:1;overflow:auto;overscroll-behavior:contain;padding:14px 14px calc(14px + env(safe-area-inset-bottom))}
+  .sop-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px 14px;margin-bottom:9px;
+    font:inherit;font-size:.95rem;font-weight:700;color:var(--ink);text-align:left;cursor:pointer;
+  }
+  .sop-item:disabled{color:var(--ink-soft);font-weight:600;cursor:default}
+  .sop-item .soon{font-size:.66rem;font-weight:700;color:var(--ink-soft);border:1px solid var(--line);border-radius:20px;padding:3px 8px;white-space:nowrap}
+  .sop-pages{flex:1;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+  .sop-page{margin:0 auto 8px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+  .sop-page canvas{display:block;width:100%;height:100%}
+  .sop-msg{padding:40px 16px;text-align:center;color:var(--ink-soft);font-size:.9rem}
 </style>
 <script data-goatcounter="https://hderek22.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
@@ -147,8 +174,13 @@
 <body>
 
 <header>
-  <button class="new-report-btn" id="newReportBtn" type="button">↺ New</button>
-  <h1>Progression Report</h1>
+  <div class="hdr-top">
+    <h1>Progression Report</h1>
+    <div class="hdr-actions">
+      <button class="hdr-btn" id="sopBtn" type="button">📄 SOPs</button>
+      <button class="hdr-btn" id="newReportBtn" type="button">↺ New</button>
+    </div>
+  </div>
   <div class="sub">Grocery Inventory Reduction • Ground Beef Markdown • Cut Fruit • Banana Handling</div>
   <div class="progress-wrap">
     <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
@@ -240,22 +272,35 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="sop-panel" id="sopPanel" hidden>
+  <div class="sop-bar">
+    <button type="button" id="sopBack" hidden>‹ SOPs</button>
+    <h2 id="sopTitle">SOPs</h2>
+    <button type="button" id="sopZoomOut" hidden aria-label="Zoom out">−</button>
+    <button type="button" id="sopZoomIn" hidden aria-label="Zoom in">+</button>
+    <button type="button" id="sopShare" hidden>Share</button>
+    <button type="button" id="sopClose" aria-label="Close SOPs">✕</button>
+  </div>
+  <div class="sop-list" id="sopList"></div>
+  <div class="sop-pages" id="sopPages" hidden></div>
+</div>
+
 <script>
 /* ================= DATA ================= */
 const INITIATIVES = [
-  { id:"grocery", name:"GROCERY INVENTORY REDUCTION", label:"Grocery Inventory Reduction", hasFocusStore:true, hasVisitType:true, sop:"sop/grocery.pdf",
+  { id:"grocery", name:"GROCERY INVENTORY REDUCTION", label:"Grocery Inventory Reduction", hasFocusStore:true, hasVisitType:true,
     structured:[
       {id:"backroomLevel", section:"Backroom Conditions", text:"Is the Overall Backroom Inventory at an acceptable level?"},
       {id:"backroomOrg", section:"Backroom Conditions", text:"Is Backroom Inventory neat and organized by overstock, backstock, and DSD?"},
       {id:"shelfMatchesTag", section:"Shelf Inventory", text:"Shelf inventory levels support the Grocery Inventory Reduction Plan (inventory on shelf matches tag movement)"},
       {id:"overstockReduced", section:"Shelf Inventory", text:"Overstock levels being reduced per plan"},
       {id:"tprAssigned", section:"Shelf Inventory", text:"TPRs are assigned where needed"},
+      {id:"tprEndingReport", section:"Shelf Inventory", text:"Is store utilizing the TPR ending Report?"},
       {id:"rotationFollowed", section:"Rotation & Shrink", text:"Rotation followed"},
-      {id:"damagesProcessed", section:"Rotation & Shrink", text:"Damages processed daily"},
-      {id:"reclaimCurrent", section:"Rotation & Shrink", text:"Reclaim current"}
+      {id:"damagesProcessed", section:"Rotation & Shrink", text:"Are Damages and Reclaims being maintained in an organized fashion."}
     ]
   },
-  { id:"groundbeef", name:"GROUND BEEF MARKDOWN", label:"Ground Beef Markdown", hasFocusStore:false, sop:"sop/groundbeef.pdf",
+  { id:"groundbeef", name:"GROUND BEEF MARKDOWN", label:"Ground Beef Markdown", hasFocusStore:false,
     structured:[
       {id:"gbProduction", section:"Production", text:"Ground beef production appropriate"},
       {id:"grindTimes", section:"Production", text:"Multiple grind times observed"},
@@ -266,7 +311,7 @@ const INITIATIVES = [
       {id:"gbRhcGot", section:"Markdown & Dating", text:"RHC / GOT utilized for markdowns / throwaways"}
     ]
   },
-  { id:"cutfruit", name:"CUT FRUIT", label:"Cut Fruit", hasFocusStore:false, sop:"sop/cutfruit.pdf",
+  { id:"cutfruit", name:"CUT FRUIT", label:"Cut Fruit", hasFocusStore:false,
     structured:[
       {id:"cutFruitQuality", section:"Quality", text:"Cut fruit quality / variety matches tags"},
       {id:"prepRoomClean", section:"Prep & Safety", text:"Prep room clean / organized"},
@@ -274,7 +319,7 @@ const INITIATIVES = [
       {id:"knifeHandling", section:"Prep & Safety", text:"Safe knife handling / storage"}
     ]
   },
-  { id:"banana", name:"BANANA HANDLING", label:"Banana Handling", hasFocusStore:false, sop:"sop/banana.pdf",
+  { id:"banana", name:"BANANA HANDLING", label:"Banana Handling", hasFocusStore:false,
     structured:[
       {id:"bananaQuality", section:"Quality & SOP", text:"Banana quality / SOP being followed"},
       {id:"bananaMarkdown", section:"Markdown", text:"Markdown / repurpose policy followed"},
@@ -410,6 +455,199 @@ document.querySelectorAll(".visit-type-chips").forEach(row => {
   });
 });
 
+/* ================= SOP LIBRARY =================
+   Full-screen panel over the report — never navigates away, so it can't bump an installed PWA out to
+   Safari, and closing it restores the exact scroll position. PDFs are drawn with PDF.js (not an iframe,
+   which on iPhone often shows only page 1 and fights the page for scrolling). To add an SOP: drop the
+   PDF in sop/ and give its entry a `file`. Entries without a file show as "Coming soon". */
+const SOP_DIR = "sop/";
+const PDFJS_BASE = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+const SOPS = [
+  {title:"Grocery Inventory Reduction", file:"grocery.pdf"},
+  {title:"TPR Ending Report", file:"tprending.pdf"},
+  {title:"Ground Beef Markdown", file:"groundbeef.pdf"},
+  {title:"Cut Fruit", file:null},
+  {title:"Banana Handling", file:"banana.pdf"}
+];
+const SOP_ZOOMS = [1, 1.5, 2, 2.5];
+const sopEl = id => document.getElementById(id);
+const SOP_VIEWER_IDS = ["sopBack", "sopZoomOut", "sopZoomIn", "sopShare", "sopPages"];
+let sopViewer = null; // {sop, zoomIdx, doc, pages, divs, observer, shareFile, fitW}
+let sopReturnScroll = 0;
+let pdfjsReady = null;
+
+function loadPdfJs(){
+  if (!pdfjsReady){
+    pdfjsReady = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = PDFJS_BASE + "pdf.min.js";
+      s.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_BASE + "pdf.worker.min.js"; resolve(pdfjsLib); };
+      s.onerror = () => { pdfjsReady = null; s.remove(); reject(new Error("PDF.js failed to load")); };
+      document.head.appendChild(s);
+    });
+  }
+  return pdfjsReady;
+}
+
+sopEl("sopList").innerHTML = SOPS.map((s, i) => s.file
+  ? `<button type="button" class="sop-item" data-i="${i}">${s.title}<span aria-hidden="true">›</span></button>`
+  : `<button type="button" class="sop-item" disabled>${s.title}<span class="soon">Coming soon</span></button>`
+).join("");
+
+function openSopPanel(){
+  sopReturnScroll = window.scrollY;
+  showSopList();
+  sopEl("sopPanel").hidden = false;
+  document.body.style.overflow = "hidden";
+}
+function closeSopPanel(){
+  closeSopViewer();
+  sopEl("sopPanel").hidden = true;
+  document.body.style.overflow = "";
+  window.scrollTo(0, sopReturnScroll);
+}
+function showSopList(){
+  closeSopViewer();
+  sopEl("sopTitle").textContent = "SOPs";
+  SOP_VIEWER_IDS.forEach(id => sopEl(id).hidden = true);
+  sopEl("sopList").hidden = false;
+}
+
+async function openSopDoc(sop){
+  closeSopViewer();
+  const v = sopViewer = {sop, zoomIdx: 0, doc: null, pages: [], divs: [], observer: null, shareFile: null};
+  const stillOpen = () => sopViewer === v;
+  sopEl("sopTitle").textContent = sop.title;
+  sopEl("sopList").hidden = true;
+  SOP_VIEWER_IDS.forEach(id => sopEl(id).hidden = false);
+  updateSopZoomButtons();
+  const pagesEl = sopEl("sopPages");
+  pagesEl.scrollTop = 0;
+  pagesEl.innerHTML = `<div class="sop-msg">Loading…</div>`;
+  try {
+    const lib = await loadPdfJs();
+    const doc = await lib.getDocument(SOP_DIR + sop.file).promise;
+    if (!stillOpen()){ doc.destroy(); return; }
+    v.doc = doc;
+    // Pre-build the share file now: iOS only allows the share sheet right after a tap, with no waiting in between.
+    doc.getData().then(bytes => {
+      if (stillOpen()) v.shareFile = new File([bytes], sop.title.replace(/[^a-zA-Z0-9]+/g, "_") + "_SOP.pdf", {type: "application/pdf"});
+    }).catch(() => {});
+    const pages = [];
+    for (let i = 1; i <= doc.numPages; i++) pages.push(await doc.getPage(i));
+    if (!stillOpen()) return;
+    v.pages = pages;
+    layoutSopPages();
+  } catch(e){
+    if (stillOpen()) pagesEl.innerHTML = `<div class="sop-msg">Couldn't load this SOP. Check your connection and try again.</div>`;
+  }
+}
+
+function closeSopViewer(){
+  const v = sopViewer;
+  if (!v) return;
+  sopViewer = null;
+  if (v.observer) v.observer.disconnect();
+  v.divs.forEach(freeSopPage);
+  if (v.doc) v.doc.destroy();
+  sopEl("sopPages").innerHTML = "";
+}
+
+// Pages are sized up front but only drawn when near the screen, and released when scrolled far away —
+// keeps memory low enough for iPhones even at high zoom.
+function layoutSopPages(){
+  const v = sopViewer, pagesEl = sopEl("sopPages");
+  if (v.observer) v.observer.disconnect();
+  v.divs.forEach(freeSopPage);
+  v.fitW = pagesEl.clientWidth - 16;
+  const w = v.fitW * SOP_ZOOMS[v.zoomIdx];
+  pagesEl.innerHTML = "";
+  v.divs = v.pages.map((page, i) => {
+    const vp = page.getViewport({scale: 1});
+    const div = document.createElement("div");
+    div.className = "sop-page";
+    div.style.width = w + "px";
+    div.style.height = (w * vp.height / vp.width) + "px";
+    div.dataset.i = i;
+    div.appendChild(document.createElement("canvas"));
+    pagesEl.appendChild(div);
+    return div;
+  });
+  v.observer = new IntersectionObserver(entries => entries.forEach(en => {
+    if (en.isIntersecting) renderSopPage(+en.target.dataset.i);
+    else freeSopPage(en.target);
+  }), {root: pagesEl, rootMargin: "100% 0px"});
+  v.divs.forEach(d => v.observer.observe(d));
+}
+
+async function renderSopPage(i){
+  const v = sopViewer;
+  if (!v) return;
+  const div = v.divs[i];
+  if (div.rendered) return;
+  div.rendered = true;
+  const page = v.pages[i];
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const scale = parseFloat(div.style.width) / page.getViewport({scale: 1}).width * dpr;
+  const vp = page.getViewport({scale});
+  const canvas = div.firstChild;
+  canvas.width = Math.floor(vp.width);
+  canvas.height = Math.floor(vp.height);
+  div.renderTask = page.render({canvasContext: canvas.getContext("2d"), viewport: vp});
+  try { await div.renderTask.promise; } catch(e){} // cancelled: scrolled away, zoomed, or closed
+  div.renderTask = null;
+}
+
+function freeSopPage(div){
+  if (div.renderTask){ div.renderTask.cancel(); div.renderTask = null; }
+  const canvas = div.firstChild;
+  if (canvas){ canvas.width = 0; canvas.height = 0; }
+  div.rendered = false;
+}
+
+function setSopZoom(delta){
+  const v = sopViewer;
+  if (!v || !v.pages.length) return;
+  const next = Math.max(0, Math.min(SOP_ZOOMS.length - 1, v.zoomIdx + delta));
+  if (next === v.zoomIdx) return;
+  const pagesEl = sopEl("sopPages");
+  const ratio = pagesEl.scrollTop / Math.max(1, pagesEl.scrollHeight);
+  v.zoomIdx = next;
+  layoutSopPages();
+  pagesEl.scrollTop = ratio * pagesEl.scrollHeight;
+  pagesEl.scrollLeft = 0;
+  updateSopZoomButtons();
+}
+function updateSopZoomButtons(){
+  const i = sopViewer ? sopViewer.zoomIdx : 0;
+  sopEl("sopZoomOut").disabled = i === 0;
+  sopEl("sopZoomIn").disabled = i === SOP_ZOOMS.length - 1;
+}
+
+async function shareCurrentSop(){
+  const v = sopViewer;
+  if (!v) return;
+  if (!v.shareFile){ toast("Still loading — try again in a moment."); return; }
+  if (!(navigator.canShare && navigator.canShare({files: [v.shareFile]}))){ toast("Sharing isn't supported on this device."); return; }
+  try { await navigator.share({files: [v.shareFile], title: v.sop.title + " SOP"}); }
+  catch(e){ if (e.name !== "AbortError") toast("Couldn't share this SOP. Try again."); }
+}
+
+sopEl("sopBtn").addEventListener("click", openSopPanel);
+sopEl("sopClose").addEventListener("click", closeSopPanel);
+sopEl("sopBack").addEventListener("click", showSopList);
+sopEl("sopZoomIn").addEventListener("click", () => setSopZoom(1));
+sopEl("sopZoomOut").addEventListener("click", () => setSopZoom(-1));
+sopEl("sopShare").addEventListener("click", shareCurrentSop);
+sopEl("sopList").addEventListener("click", e => {
+  const b = e.target.closest(".sop-item[data-i]");
+  if (b) openSopDoc(SOPS[+b.dataset.i]);
+});
+window.addEventListener("resize", () => {
+  const v = sopViewer;
+  if (v && v.pages.length && sopEl("sopPages").clientWidth - 16 !== v.fitW) layoutSopPages();
+});
+
 /* ================= YES/NO BUTTONS ================= */
 function updateReveal(qid, r){
   const rev = document.getElementById("reveal-"+cssId(qid));
@@ -458,27 +696,43 @@ document.querySelectorAll('.q textarea[data-qid]').forEach(ta => {
 });
 
 /* ================= PHOTO ATTACHMENTS (observations) ================= */
-const PHOTO_MAX_DIM = 1600;
-const PHOTO_QUALITY = 0.7;
-async function compressImage(file, maxDim = PHOTO_MAX_DIM, quality = PHOTO_QUALITY){
+const PHOTO_MAX_DIM = 1024;
+const PHOTO_QUALITY = 0.55;
+const PHOTO_LARGE_WARN_BYTES = 3 * 1024 * 1024; // flag anything this big that slipped through uncompressed
+const PHOTO_TOTAL_WARN_BYTES = 18 * 1024 * 1024; // most mail/share targets start failing around 20-25MB total
+
+/* decode via createImageBitmap first; fall back to an <img> element for formats it can't handle */
+async function decodeImage(file){
+  try { return await createImageBitmap(file); } catch(e){}
+  const url = URL.createObjectURL(file);
   try {
-    const bitmap = await createImageBitmap(file);
-    let {width, height} = bitmap;
-    if (width > maxDim || height > maxDim){
-      const scale = maxDim / Math.max(width, height);
-      width = Math.round(width * scale);
-      height = Math.round(height * scale);
-    }
-    const canvas = document.createElement("canvas");
-    canvas.width = width; canvas.height = height;
-    canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
-    bitmap.close && bitmap.close();
-    const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
-    if (!blob) return file;
-    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", {type: "image/jpeg"});
-  } catch(e){
-    return file; // compression unsupported or failed — attach the original instead
+    return await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = url;
+    });
+  } finally {
+    URL.revokeObjectURL(url);
   }
+}
+async function compressImage(file, maxDim = PHOTO_MAX_DIM, quality = PHOTO_QUALITY){
+  let src;
+  try { src = await decodeImage(file); } catch(e){ return {file, compressed:false}; }
+  let width = src.width, height = src.height;
+  if (width > maxDim || height > maxDim){
+    const scale = maxDim / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = width; canvas.height = height;
+  canvas.getContext("2d").drawImage(src, 0, 0, width, height);
+  if (src.close) src.close();
+  const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
+  if (!blob) return {file, compressed:false};
+  const compressedFile = new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", {type: "image/jpeg"});
+  return {file: compressedFile, compressed:true};
 }
 document.querySelectorAll(".photo-btn").forEach(b => {
   b.addEventListener("click", () => document.getElementById("file-"+cssId(b.dataset.qid)).click());
@@ -491,8 +745,15 @@ document.querySelectorAll('input[type="file"][data-qid]').forEach(inp => {
     if (!files.length) return;
     answers[qid] = answers[qid] || {};
     answers[qid].photos = answers[qid].photos || [];
-    const compressed = await Promise.all(files.map(f => compressImage(f)));
-    compressed.forEach(f => answers[qid].photos.push({file:f, url:URL.createObjectURL(f)}));
+    const results = await Promise.all(files.map(f => compressImage(f)));
+    const oversized = [];
+    results.forEach(r => {
+      answers[qid].photos.push({file:r.file, url:URL.createObjectURL(r.file)});
+      if (!r.compressed && r.file.size > PHOTO_LARGE_WARN_BYTES) oversized.push(r.file.name);
+    });
+    if (oversized.length){
+      toast(`"${oversized[0]}"${oversized.length > 1 ? ` and ${oversized.length - 1} other photo(s)` : ""} couldn't be compressed and ${oversized.length > 1 ? "are" : "is"} large — this may cause sending to fail.`);
+    }
     renderStrip(qid);
     updateShareBtn();
     scheduleSave();
@@ -511,15 +772,49 @@ function renderStrip(qid){
     updateShareBtn();
   }));
 }
-function allPhotos(){ return Object.values(answers).flatMap(a => a.photos || []); }
+/* qids in the same order they're presented in the report, so attached photos line up with the text */
+function photoQidOrder(){
+  const order = [];
+  INITIATIVES.forEach(init => {
+    [...new Set(init.structured.map(s => s.section))].forEach(sec => order.push(`${init.id}.section.${sectionSlug(sec)}`));
+    order.push(`${init.id}.obs`);
+  });
+  order.push("misc.notes");
+  return order;
+}
+function labelForQid(qid){
+  if (qid === "misc.notes") return "Store Health";
+  const m = qid.match(/^([a-z]+)\.(section\.(.+)|obs)$/);
+  if (!m) return qid;
+  const init = INITIATIVES.find(i => i.id === m[1]);
+  if (!init) return qid;
+  if (m[2] === "obs") return `${init.label} - Observations`;
+  const sec = init.structured.find(s => sectionSlug(s.section) === m[3]);
+  return `${init.label} - ${sec ? sec.section : m[3]}`;
+}
+function orderedPhotos(){
+  return photoQidOrder().flatMap(qid => {
+    const a = answers[qid];
+    if (!a || !a.photos || !a.photos.length) return [];
+    const label = labelForQid(qid);
+    return a.photos.map(p => ({...p, label}));
+  });
+}
+function buildPhotoFiles(){
+  return orderedPhotos().map((p, i) => {
+    const ext = (p.file.name.match(/\.\w+$/) || [".jpg"])[0];
+    const safeLabel = p.label.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    return new File([p.file], `${String(i + 1).padStart(2, "0")}_${safeLabel}${ext}`, {type: p.file.type});
+  });
+}
 function updateShareBtn(){
-  const n = allPhotos().length;
+  const n = orderedPhotos().length;
   const b = document.getElementById("sharePhotosBtn");
   b.style.display = n ? "block" : "none";
   b.textContent = "📷 " + n;
 }
 document.getElementById("sharePhotosBtn").addEventListener("click", async () => {
-  const files = allPhotos().map(p => p.file);
+  const files = buildPhotoFiles();
   if (navigator.canShare && navigator.canShare({files})){
     try { await navigator.share({files, title:"Progression Report Photos"}); } catch(e){}
   } else {
@@ -543,6 +838,13 @@ const ALL_FIELD_IDS = COVER_FIELD_IDS.concat(DATE_FIELD_IDS);
 ALL_FIELD_IDS.forEach(id => {
   document.getElementById(id).addEventListener("input", scheduleSave);
 });
+
+/* Submit stays disabled until the recipients field holds a well-formed email (or list of them) */
+function updateSubmitEnabled(){
+  document.getElementById("submitBtn").disabled = !document.getElementById("recipients").checkValidity();
+}
+document.getElementById("recipients").addEventListener("input", updateSubmitEnabled);
+updateSubmitEnabled();
 
 /* ================= DRAFT AUTOSAVE ================= */
 const DRAFT_KEY = "tlsInitDraft";
@@ -570,6 +872,7 @@ function applyDraft(draft){
   ALL_FIELD_IDS.forEach(id => {
     if (f[id] !== undefined) document.getElementById(id).value = f[id];
   });
+  updateSubmitEnabled();
   if (draft.storeFormat){
     storeFormat = draft.storeFormat;
     document.querySelectorAll("#fmtChips .chip").forEach(x => x.classList.toggle("sel", x.dataset.v === storeFormat));
@@ -669,79 +972,274 @@ document.getElementById("submitBtn").addEventListener("click", () => {
     document.getElementById("reveal-"+cssId(missingDates[0].id+".focusStore")).scrollIntoView({behavior:"smooth", block:"center"});
     return;
   }
+  const photos = orderedPhotos();
+  const totalPhotoBytes = photos.reduce((sum, p) => sum + p.file.size, 0);
+  if (totalPhotoBytes > PHOTO_TOTAL_WARN_BYTES){
+    const mb = (totalPhotoBytes / (1024 * 1024)).toFixed(1);
+    const proceed = confirm(`You're attaching ${photos.length} photo(s), about ${mb} MB total. Many email/messaging apps cap attachments around 20-25 MB, so this may fail to send. Remove a few photos, or continue anyway?`);
+    if (!proceed) return;
+  }
   sendEmail();
 });
 
-async function sendEmail(){
+/* ================= REPORT MODEL (shared by the plain-text and HTML renderers) ================= */
+function buildReportModel(){
   const g = id => document.getElementById(id).value.trim();
-  const line = "----------------------------------------";
 
+  const initiativeBlocks = INITIATIVES.map(init => {
+    const focusStore = init.hasFocusStore ? {
+      rating: answers[`${init.id}.focusStore`]?.rating,
+      start: document.getElementById(`start-${init.id}`).value,
+      deadline: document.getElementById(`deadline-${init.id}`).value
+    } : null;
+
+    const rawSections = [];
+    init.structured.forEach(s => {
+      const cur = rawSections[rawSections.length - 1];
+      if (!cur || cur.section !== s.section) rawSections.push({section: s.section, items: [s]});
+      else cur.items.push(s);
+    });
+    const sections = rawSections.map(sec => {
+      const answered = sec.items
+        .map(s => ({s, a: answers[`${init.id}.${s.id}`]}))
+        .filter(x => x.a && x.a.rating);
+      const photoAnswer = answers[`${init.id}.section.${sectionSlug(sec.section)}`];
+      const photos = (photoAnswer && photoAnswer.photos) || [];
+      return {section: sec.section, answered, photos};
+    }).filter(sec => sec.answered.length || sec.photos.length);
+
+    const obsAnswer = answers[`${init.id}.obs`];
+    const obs = obsAnswer ? {note: obsAnswer.note || "", photos: obsAnswer.photos || []} : null;
+
+    return {init, focusStore, visitType: init.hasVisitType ? (visitType[init.id] || null) : null, sections, obs};
+  });
+
+  const miscAnswer = answers["misc.notes"];
+
+  return {
+    storeNum: g("storeNum"), visitDate: g("visitDate"), storeFormat, regionNum: g("regionNum"),
+    mgrName: g("mgrName"), tlsName: g("tlsName"),
+    initiativeBlocks,
+    storeHealth: {note: (miscAnswer && miscAnswer.note) || "", photos: (miscAnswer && miscAnswer.photos) || []},
+    bestPractices: g("bestPractices"), opportunities: g("opportunities"),
+    recipients: g("recipients") || "DOusley@houchens.com",
+    subject: `Progression Report — Store ${g("storeNum")} — ${g("visitDate")}`
+  };
+}
+
+function renderPlainText(m){
+  const HR = "----------------------------------------";
   let b = [];
-  b.push("TLS PROGRESSION REPORT");
-  b.push(line);
-  b.push("Store Format: " + (storeFormat || "—"));
-  b.push("HFG Store Number: " + g("storeNum"));
-  b.push("Region Number: " + (g("regionNum") || "—"));
-  b.push("Store Manager: " + (g("mgrName") || "—"));
-  b.push("TLS: " + g("tlsName"));
-  b.push("Date of Visit: " + g("visitDate"));
+  b.push("TLS PROGRESSION REPORT — Store " + (m.storeNum || "—"));
+  b.push(HR);
+  b.push("Date of Visit: " + (m.visitDate || "—"));
+  b.push("Store Format: " + (m.storeFormat || "—"));
+  b.push("Region Number: " + (m.regionNum || "—"));
+  b.push("Store Manager: " + (m.mgrName || "—"));
+  b.push("TLS: " + m.tlsName);
   b.push("");
 
-  INITIATIVES.forEach(init => {
-    b.push(init.name);
-    b.push(line);
-    if (init.hasFocusStore){
-      const fs = answers[`${init.id}.focusStore`]?.rating;
-      b.push("Currently a focus store: " + (fs || "—"));
-      if (fs === "Yes"){
-        b.push("  Initial Start Date: " + (document.getElementById(`start-${init.id}`).value || "—"));
-        b.push("  Deadline for Completion: " + (document.getElementById(`deadline-${init.id}`).value || "—"));
+  m.initiativeBlocks.forEach(block => {
+    b.push(block.init.name);
+    b.push(HR);
+    if (block.focusStore){
+      b.push("Focus Store: " + (block.focusStore.rating || "—"));
+      if (block.focusStore.rating === "Yes"){
+        b.push("  Initial Start Date: " + (block.focusStore.start || "—"));
+        b.push("  Deadline for Completion: " + (block.focusStore.deadline || "—"));
       }
     }
-    if (init.hasVisitType){
-      b.push("Visit Type: " + (visitType[init.id] || "—"));
+    if (block.visitType) b.push("Visit Type: " + block.visitType);
+
+    block.sections.forEach(sec => {
+      b.push("");
+      b.push(sec.section + ":");
+      sec.answered.forEach(({s, a}) => {
+        b.push(`  ${a.rating === "No" ? "⚠️" : "✅"} ${s.text} — ${a.rating}`);
+        if (a.note) b.push(`     Why: ${a.note}`);
+      });
+      if (sec.photos.length) b.push(`  📷 ${sec.photos.length} photo(s) attached`);
+    });
+
+    if (block.obs && (block.obs.note || block.obs.photos.length)){
+      b.push("");
+      b.push("Observations:");
+      if (block.obs.note) b.push("  " + block.obs.note);
+      if (block.obs.photos.length) b.push(`  📷 ${block.obs.photos.length} photo(s) attached`);
     }
-    init.structured.forEach(s => {
-      const a = answers[`${init.id}.${s.id}`];
-      if (!a || !a.rating) return;
-      b.push(`  ${a.rating === "No" ? "⚠️" : "✅"} ${s.text} — ${a.rating}`);
-      if (a.note) b.push(`     Why: ${a.note}`);
-    });
-    [...new Set(init.structured.map(s => s.section))].forEach(sec => {
-      const p = answers[`${init.id}.section.${sectionSlug(sec)}`];
-      if (p && p.photos && p.photos.length) b.push(`  Photos (${sec}): ${p.photos.length} (sent separately)`);
-    });
-    const obs = answers[`${init.id}.obs`];
-    if (obs && obs.note) b.push("  Observations: " + obs.note);
-    if (obs && obs.photos && obs.photos.length) b.push(`  Photos: ${obs.photos.length} (sent separately)`);
     b.push("");
   });
 
-  const misc = answers["misc.notes"];
   b.push("STORE HEALTH");
-  b.push(line);
-  b.push((misc && misc.note) || "—");
-  if (misc && misc.photos && misc.photos.length) b.push(`Photos: ${misc.photos.length} (sent separately)`);
+  b.push(HR);
+  b.push(m.storeHealth.note || "—");
+  if (m.storeHealth.photos.length) b.push(`📷 ${m.storeHealth.photos.length} photo(s) attached`);
   b.push("");
 
   b.push("VISIT SUMMARY — covered with Store Manager / PIC");
-  b.push(line);
+  b.push(HR);
   b.push("Best Practices Observed:");
-  b.push(g("bestPractices") || "—");
+  b.push("  " + (m.bestPractices || "—"));
   b.push("");
   b.push("Opportunities for Improvement:");
-  b.push(g("opportunities") || "—");
+  b.push("  " + (m.opportunities || "—"));
   b.push("");
-  b.push("Submitted via Progression Report app");
 
-  const subject = `Progression Report — Store ${g("storeNum")} — ${g("visitDate")}`;
-  const to = g("recipients") || "DOusley@houchens.com";
-  const bodyText = b.join("\n");
-  const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-  const photoFiles = allPhotos().map(p => p.file);
+  b.push(HR);
+  b.push("Submitted via Progression Report app");
+  const totalPhotos = m.initiativeBlocks.reduce((sum, blk) =>
+    sum + blk.sections.reduce((s2, sec) => s2 + sec.photos.length, 0) + (blk.obs ? blk.obs.photos.length : 0), 0
+  ) + m.storeHealth.photos.length;
+  if (totalPhotos) b.push(`${totalPhotos} photo(s) attached, numbered/ordered to match this report`);
+
+  return b.join("\n");
+}
+
+/* ================= HTML RENDERER (relay path — real inline photos via CID) ================= */
+function escapeHtml(str){
+  return (str || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+}
+function htmlText(str){ return escapeHtml(str).replace(/\n/g, "<br>"); }
+async function fileToBase64(file){
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize){
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function renderHtml(m){
+  const attachments = [];
+  let cidCounter = 0;
+  async function photoImgTags(photos, label){
+    let tags = "";
+    for (const p of photos){
+      cidCounter++;
+      const cid = `photo${cidCounter}`;
+      const ext = (p.file.name.match(/\.\w+$/) || [".jpg"])[0];
+      const safeLabel = label.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      attachments.push({
+        filename: `${String(cidCounter).padStart(2, "0")}_${safeLabel}${ext}`,
+        contentType: p.file.type || "image/jpeg",
+        contentBase64: await fileToBase64(p.file),
+        cid
+      });
+      tags += `<img src="cid:${cid}" alt="${escapeHtml(label)} photo" style="max-width:280px;width:100%;height:auto;border-radius:8px;border:1px solid #e2e1d9;margin:6px 6px 0 0">`;
+    }
+    return tags ? `<div style="margin-top:8px">${tags}</div>` : "";
+  }
+
+  const subStyle = "font:700 13px -apple-system,Segoe UI,Roboto,sans-serif;color:#14532d;margin:14px 0 4px";
+  const pStyle = "font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#1c2b26;margin:4px 0";
+  const whyStyle = "font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#5a6b64;margin:2px 0 2px 18px";
+  const GREEN = "#14532d";
+  const FLAG = "#b91c1c";
+  const flagStyle = `font:700 14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:${FLAG};margin:4px 0`;
+  // Each section is its own bordered, colored-header "card" — so a section (e.g. GB Markdown) can be
+  // cleanly selected and copy-pasted out of the email on its own, without dragging in the rest of the report.
+  function cardOpen(title, accent){
+    return `<div style="border:1px solid #e2e1d9;border-left:4px solid ${accent};border-radius:10px;overflow:hidden;margin:0 0 18px">` +
+      `<div style="background:${accent};color:#ffffff;font:700 15px -apple-system,Segoe UI,Roboto,sans-serif;padding:10px 16px">${title}</div>` +
+      `<div style="padding:14px 16px">`;
+  }
+  const cardClose = "</div></div>";
+
+  let html = `<div style="max-width:640px;margin:0 auto">`;
+  html += `<h1 style="font:800 18px -apple-system,Segoe UI,Roboto,sans-serif;color:${GREEN};margin:0 0 4px">TLS Progression Report — Store ${escapeHtml(m.storeNum || "—")}</h1>`;
+  html += `<p style="${pStyle}">Date of Visit: ${escapeHtml(m.visitDate || "—")}<br>Store Format: ${escapeHtml(m.storeFormat || "—")}<br>Region Number: ${escapeHtml(m.regionNum || "—")}<br>Store Manager: ${escapeHtml(m.mgrName || "—")}<br>TLS: ${escapeHtml(m.tlsName)}</p>`;
+  html += `<div style="margin:18px 0"></div>`;
+
+  for (const block of m.initiativeBlocks){
+    const hasContent = block.focusStore || block.visitType || block.sections.length ||
+      (block.obs && (block.obs.note || block.obs.photos.length));
+    if (!hasContent) continue;
+    html += cardOpen(escapeHtml(block.init.name), GREEN);
+    if (block.focusStore){
+      html += `<p style="${pStyle}">Focus Store: ${escapeHtml(block.focusStore.rating || "—")}</p>`;
+      if (block.focusStore.rating === "Yes"){
+        html += `<p style="${pStyle}">Start: ${escapeHtml(block.focusStore.start || "—")} &nbsp;&nbsp; Deadline: ${escapeHtml(block.focusStore.deadline || "—")}</p>`;
+      }
+    }
+    if (block.visitType) html += `<p style="${pStyle}">Visit Type: ${escapeHtml(block.visitType)}</p>`;
+
+    for (const sec of block.sections){
+      html += `<div style="${subStyle}">${escapeHtml(sec.section)}</div>`;
+      for (const {s, a} of sec.answered){
+        html += `<p style="${a.rating === "No" ? flagStyle : pStyle}">${a.rating === "No" ? "⚠️" : "✅"} ${escapeHtml(s.text)} — ${a.rating}</p>`;
+        if (a.note) html += `<p style="${whyStyle}">Why: ${htmlText(a.note)}</p>`;
+      }
+      html += await photoImgTags(sec.photos, `${block.init.label} - ${sec.section}`);
+    }
+
+    if (block.obs && (block.obs.note || block.obs.photos.length)){
+      html += `<div style="${subStyle}">Observations</div>`;
+      if (block.obs.note) html += `<p style="${pStyle}">${htmlText(block.obs.note)}</p>`;
+      html += await photoImgTags(block.obs.photos, `${block.init.label} - Observations`);
+    }
+    html += cardClose;
+  }
+
+  html += cardOpen("Store Health", GREEN);
+  html += `<p style="${pStyle}">${htmlText(m.storeHealth.note || "—")}</p>`;
+  html += await photoImgTags(m.storeHealth.photos, "Store Health");
+  html += cardClose;
+
+  html += cardOpen("Visit Summary", GREEN);
+  html += `<p style="${pStyle}"><b>Best Practices Observed:</b><br>${htmlText(m.bestPractices || "—")}</p>`;
+  html += `<p style="${pStyle}"><b>Opportunities for Improvement:</b><br>${htmlText(m.opportunities || "—")}</p>`;
+  html += cardClose;
+
+  html += `<p style="font:12px -apple-system,Segoe UI,Roboto,sans-serif;color:#5a6b64;margin-top:20px">Submitted via Progression Report app</p>`;
+  html += `</div>`;
+
+  return {html, attachments};
+}
+
+/* ================= RELAY (sends real HTML email w/ inline photos; falls back silently if unset/unreachable) ================= */
+const RELAY_URL = "https://crimson-shape-76f1.hderek22.workers.dev";
+const RELAY_SHARED_SECRET = "Oneverylongsharedsecretkeyphrase!"; // must match the Worker's RELAY_SHARED_SECRET secret — see worker/README.md
+const RELAY_MAX_BYTES = 35 * 1024 * 1024; // stays under Resend's 40MB (post-base64) attachment cap with margin
+
+async function sendViaRelay(m, html, text, attachments){
+  if (!RELAY_URL) return false;
+  const totalBase64Chars = attachments.reduce((sum, a) => sum + a.contentBase64.length, 0);
+  if (totalBase64Chars * 0.75 > RELAY_MAX_BYTES) return false; // too large — let the share/mailto fallback handle it
+  try {
+    const res = await fetch(RELAY_URL, {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-Relay-Secret": RELAY_SHARED_SECRET},
+      body: JSON.stringify({
+        to: m.recipients.split(",").map(s => s.trim()).filter(Boolean),
+        subject: m.subject,
+        html, text, attachments
+      })
+    });
+    return res.ok;
+  } catch(e){
+    return false;
+  }
+}
+
+async function sendEmail(){
+  const m = buildReportModel();
+  const bodyText = renderPlainText(m);
+
+  if (RELAY_URL){
+    const {html, attachments} = await renderHtml(m);
+    if (await sendViaRelay(m, html, bodyText, attachments)){
+      clearDraft();
+      toast("Report sent!");
+      return;
+    }
+  }
+
+  const url = `mailto:${encodeURIComponent(m.recipients)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(bodyText)}`;
+  const photoFiles = buildPhotoFiles();
 
   if (navigator.share){
-    const shareData = {title: subject, text: bodyText};
+    const shareData = {title: m.subject, text: bodyText};
     if (photoFiles.length && navigator.canShare && navigator.canShare({files: photoFiles})){
       shareData.files = photoFiles;
     }
