@@ -943,6 +943,55 @@ function refresh(){
 refresh();
 loadDraft();
 
+/* ================= AUTO-UPDATE =================
+   An installed home-screen app on iPhone can stay suspended on an old version for days. On open and
+   whenever the app returns to the foreground, compare this page's code with the copy on the server; if it
+   changed, save the draft and reload. Waits while photos are attached (they aren't in the saved draft),
+   the SOP viewer is open, or a report is sending. Comparing the code itself means no version number has
+   to be bumped on release — but a change to static HTML alone (outside <style>/<script>) won't trigger it. */
+const UPDATE_STAMP_KEY = "tlsAppUpdatedAt";
+function codeSource(doc){
+  return [...doc.querySelectorAll("style, script:not([src])")].map(el => el.textContent).join("\n");
+}
+const RUNNING_CODE = codeSource(document);
+let updatePending = false;
+let lastUpdateCheck = 0;
+
+function safeToReload(){
+  return !orderedPhotos().length && sopEl("sopPanel").hidden && !document.getElementById("submitBtn").textContent.startsWith("Sending");
+}
+function applyUpdate(){
+  clearTimeout(saveTimer);
+  let hasDraft = false;
+  try { hasDraft = !!localStorage.getItem(DRAFT_KEY); } catch(e){}
+  if (hasDraft || Object.keys(answers).length || Object.keys(visitType).length) saveDraft();
+  try { sessionStorage.setItem(UPDATE_STAMP_KEY, String(Date.now())); } catch(e){}
+  // A fresh query string sidesteps the browser cache, so the reload really gets the new version.
+  location.replace(location.pathname + "?v=" + Date.now());
+}
+async function checkForUpdate(){
+  if (updatePending){ if (safeToReload()) applyUpdate(); return; }
+  if (Date.now() - lastUpdateCheck < 60000) return;
+  lastUpdateCheck = Date.now();
+  try {
+    const res = await fetch(location.pathname + "?update-check=" + Date.now(), {cache: "no-store"});
+    if (!res.ok) return;
+    const latest = codeSource(new DOMParser().parseFromString(await res.text(), "text/html"));
+    if (latest === RUNNING_CODE) return;
+    let lastUpdate = 0;
+    try { lastUpdate = +sessionStorage.getItem(UPDATE_STAMP_KEY) || 0; } catch(e){}
+    if (Date.now() - lastUpdate < 120000) return; // just reloaded for an update and still differ — don't loop
+    updatePending = true;
+    if (safeToReload()) applyUpdate();
+  } catch(e){} // offline or server hiccup — try again next time
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkForUpdate(); });
+setInterval(() => { if (updatePending) checkForUpdate(); }, 30000);
+setTimeout(checkForUpdate, 2000);
+try {
+  if (Date.now() - (+sessionStorage.getItem(UPDATE_STAMP_KEY) || 0) < 15000) setTimeout(() => toast("App updated to the latest version."), 700);
+} catch(e){}
+
 /* ================= SUBMIT ================= */
 function toast(msg){
   const t = document.getElementById("toast");
