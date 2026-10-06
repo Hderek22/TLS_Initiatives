@@ -35,6 +35,8 @@
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:var(--paper);color:var(--ink);
+    /* Room to scroll the Submit button up off the bottom edge so it's easy to reach */
+    padding-bottom:calc(120px + env(safe-area-inset-bottom));
   }
   /* ---------- header ---------- */
   header{
@@ -125,7 +127,7 @@
      the way to the bottom of the report, so it can't be tapped by accident mid-scroll. */
   .footbar{
     background:#fff;border-top:1px solid var(--line);
-    padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+    padding:14px;
     margin-top:10px;
   }
   .footbar-inner{max-width:640px;margin:0 auto;display:flex;gap:10px;align-items:center}
@@ -254,7 +256,7 @@
   <!-- ============ SEND ============ -->
   <div class="card">
     <h2>📧 Send Completed Summary</h2>
-    <p class="hint">This opens the summary in your email app — you'll still need to tap Send there to deliver it.</p>
+    <p class="hint">Tapping Submit sends the report and photos straight to these recipients. Separate multiple addresses with commas.</p>
     <label class="field" for="recipients">Recipients</label>
     <input type="email" id="recipients" multiple value="DOusley@houchens.com" placeholder="name@houchens.com, name@houchens.com">
   </div>
