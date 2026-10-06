@@ -943,6 +943,55 @@ function refresh(){
 refresh();
 loadDraft();
 
+/* ================= AUTO-UPDATE =================
+   An installed home-screen app on iPhone can stay suspended on an old version for days. On open and
+   whenever the app returns to the foreground, compare this page's code with the copy on the server; if it
+   changed, save the draft and reload. Waits while photos are attached (they aren't in the saved draft),
+   the SOP viewer is open, or a report is sending. Comparing the code itself means no version number has
+   to be bumped on release — but a change to static HTML alone (outside <style>/<script>) won't trigger it. */
+const UPDATE_STAMP_KEY = "tlsAppUpdatedAt";
+function codeSource(doc){
+  return [...doc.querySelectorAll("style, script:not([src])")].map(el => el.textContent).join("\n");
+}
+const RUNNING_CODE = codeSource(document);
+let updatePending = false;
+let lastUpdateCheck = 0;
+
+function safeToReload(){
+  return !orderedPhotos().length && sopEl("sopPanel").hidden && !document.getElementById("submitBtn").textContent.startsWith("Sending");
+}
+function applyUpdate(){
+  clearTimeout(saveTimer);
+  let hasDraft = false;
+  try { hasDraft = !!localStorage.getItem(DRAFT_KEY); } catch(e){}
+  if (hasDraft || Object.keys(answers).length || Object.keys(visitType).length) saveDraft();
+  try { sessionStorage.setItem(UPDATE_STAMP_KEY, String(Date.now())); } catch(e){}
+  // A fresh query string sidesteps the browser cache, so the reload really gets the new version.
+  location.replace(location.pathname + "?v=" + Date.now());
+}
+async function checkForUpdate(){
+  if (updatePending){ if (safeToReload()) applyUpdate(); return; }
+  if (Date.now() - lastUpdateCheck < 60000) return;
+  lastUpdateCheck = Date.now();
+  try {
+    const res = await fetch(location.pathname + "?update-check=" + Date.now(), {cache: "no-store"});
+    if (!res.ok) return;
+    const latest = codeSource(new DOMParser().parseFromString(await res.text(), "text/html"));
+    if (latest === RUNNING_CODE) return;
+    let lastUpdate = 0;
+    try { lastUpdate = +sessionStorage.getItem(UPDATE_STAMP_KEY) || 0; } catch(e){}
+    if (Date.now() - lastUpdate < 120000) return; // just reloaded for an update and still differ — don't loop
+    updatePending = true;
+    if (safeToReload()) applyUpdate();
+  } catch(e){} // offline or server hiccup — try again next time
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkForUpdate(); });
+setInterval(() => { if (updatePending) checkForUpdate(); }, 30000);
+setTimeout(checkForUpdate, 2000);
+try {
+  if (Date.now() - (+sessionStorage.getItem(UPDATE_STAMP_KEY) || 0) < 15000) setTimeout(() => toast("App updated to the latest version."), 700);
+} catch(e){}
+
 /* ================= SUBMIT ================= */
 function toast(msg){
   const t = document.getElementById("toast");
@@ -1202,12 +1251,14 @@ const RELAY_URL = "https://crimson-shape-76f1.hderek22.workers.dev";
 const RELAY_SHARED_SECRET = "Oneverylongsharedsecretkeyphrase!"; // must match the Worker's RELAY_SHARED_SECRET secret — see worker/README.md
 const RELAY_MAX_BYTES = 35 * 1024 * 1024; // stays under Resend's 40MB (post-base64) attachment cap with margin
 
+// Returns "" on success, otherwise a short human-readable reason the direct send failed.
 async function sendViaRelay(m, html, text, attachments){
-  if (!RELAY_URL) return false;
   const totalBase64Chars = attachments.reduce((sum, a) => sum + a.contentBase64.length, 0);
-  if (totalBase64Chars * 0.75 > RELAY_MAX_BYTES) return false; // too large — let the share/mailto fallback handle it
+  const mb = totalBase64Chars * 0.75 / (1024 * 1024);
+  if (mb * 1024 * 1024 > RELAY_MAX_BYTES) return `photos total ${mb.toFixed(1)} MB, over the ${RELAY_MAX_BYTES / (1024 * 1024)} MB limit`;
+  let res;
   try {
-    const res = await fetch(RELAY_URL, {
+    res = await fetch(RELAY_URL, {
       method: "POST",
       headers: {"Content-Type": "application/json", "X-Relay-Secret": RELAY_SHARED_SECRET},
       body: JSON.stringify({
@@ -1216,10 +1267,17 @@ async function sendViaRelay(m, html, text, attachments){
         html, text, attachments
       })
     });
-    return res.ok;
   } catch(e){
-    return false;
+    return `network error (${e.message || e.name}) — check your signal`;
   }
+  if (res.ok) return "";
+  let detail = "";
+  try {
+    const body = await res.json();
+    detail = body.error || "";
+    try { detail = JSON.parse(body.detail).message || detail; } catch(e){}
+  } catch(e){}
+  return `server responded ${res.status}${detail ? ": " + detail : ""}`;
 }
 
 async function sendEmail(){
@@ -1227,12 +1285,25 @@ async function sendEmail(){
   const bodyText = renderPlainText(m);
 
   if (RELAY_URL){
-    const {html, attachments} = await renderHtml(m);
-    if (await sendViaRelay(m, html, bodyText, attachments)){
+    const btn = document.getElementById("submitBtn");
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+    let reason;
+    try {
+      const {html, attachments} = await renderHtml(m);
+      reason = await sendViaRelay(m, html, bodyText, attachments);
+    } catch(e){
+      reason = `couldn't build the email (${e.message || e.name})`;
+    }
+    btn.textContent = label;
+    updateSubmitEnabled();
+    if (!reason){
       clearDraft();
       toast("Report sent!");
       return;
     }
+    alert(`The report couldn't be sent directly.\n\nReason: ${reason}\n\nYour email app will open next so you can send it yourself.`);
   }
 
   const url = `mailto:${encodeURIComponent(m.recipients)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(bodyText)}`;
