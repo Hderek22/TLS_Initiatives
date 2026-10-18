@@ -1,10 +1,11 @@
 export default {
   async fetch(request, env) {
-    const allowedOrigin = env.ALLOWED_ORIGIN || "https://hderek22.github.io";
+    const allowedOrigin = pickOrigin(request.headers.get("Origin"), env.ALLOWED_ORIGIN || "https://hderek22.github.io");
     const corsHeaders = {
       "Access-Control-Allow-Origin": allowedOrigin,
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, X-Relay-Secret",
+      "Vary": "Origin",
     };
 
     if (request.method === "OPTIONS") {
@@ -69,4 +70,18 @@ export default {
 
 function json(obj, status, corsHeaders) {
   return new Response(JSON.stringify(obj), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+}
+
+// ALLOWED_ORIGIN is a comma-separated list of the sites the app is served
+// from. An entry like https://*.tls-initiatives.pages.dev also allows
+// every Cloudflare Pages preview of the app. Browsers only accept a
+// single origin back, so echo the caller's when it's on the list.
+function pickOrigin(origin, allowed) {
+  const list = allowed.split(",").map((s) => s.trim()).filter(Boolean);
+  const ok = origin && list.some((entry) => {
+    if (!entry.includes("*.")) return entry === origin;
+    const [scheme, host] = entry.split("*.");
+    return origin.startsWith(scheme) && origin.endsWith("." + host) && !origin.slice(scheme.length).includes("/");
+  });
+  return ok ? origin : list[0];
 }

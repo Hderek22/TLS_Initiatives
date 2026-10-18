@@ -30,7 +30,7 @@ key — only this Worker does, as an encrypted secret.
 
 4. **Edit `wrangler.toml`** (or the dashboard's Variables tab) — set
    `FROM_ADDRESS` to an address at your verified Resend domain, and
-   confirm `ALLOWED_ORIGIN` matches where the app is hosted.
+   confirm `ALLOWED_ORIGIN` lists every address the app is served from, comma-separated. An entry like `https://*.tls-initiatives.pages.dev` covers all Cloudflare Pages preview builds.
 
 5. **Set the two secrets** — never put these in a committed file:
    ```

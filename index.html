@@ -46,6 +46,9 @@
     box-shadow:0 2px 8px rgba(0,0,0,.18);
   }
   .hdr-top{display:flex;align-items:center;gap:8px}
+  .moved{margin:12px 16px 0;padding:14px 16px;border-radius:var(--radius);background:var(--gold-bg);border:1px solid var(--gold);color:var(--ink);font-size:.95rem;line-height:1.4}
+  .moved b{display:block;margin-bottom:4px}
+  .moved a{display:inline-block;margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--green-deep);color:#fff;font-weight:600;text-decoration:none}
   .hdr-actions{display:flex;gap:6px;flex-shrink:0}
   .hdr-btn,.sop-bar button{
     background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;
@@ -1250,6 +1253,22 @@ async function renderHtml(m){
 
 /* ================= RELAY (sends real HTML email w/ inline photos; falls back silently if unset/unreachable) ================= */
 const RELAY_URL = "https://crimson-shape-76f1.hderek22.workers.dev";
+
+/* ================= MOVED NOTICE ================= */
+// The app now lives on Cloudflare Pages. The old GitHub Pages copy shows
+// this notice (installed apps get it through the auto-update) until that
+// copy is switched off. Drafts are saved per address, so send first.
+const NEW_HOME = "https://app.tlsprogressionreports.com/";
+if (location.hostname.endsWith("github.io")) {
+  const note = document.createElement("div");
+  note.className = "moved";
+  note.innerHTML = "<b>This app has a new address.</b>" +
+    "Send any report you're working on first: drafts don't move over. " +
+    "Then open the new address in Safari, tap Share, and choose Add to Home Screen. " +
+    "You can delete this old icon after that.<br>" +
+    '<a href="' + NEW_HOME + '" target="_blank" rel="noopener">Open the new address</a>';
+  document.querySelector("header").after(note);
+}
 const RELAY_SHARED_SECRET = "Oneverylongsharedsecretkeyphrase!"; // must match the Worker's RELAY_SHARED_SECRET secret — see worker/README.md
 const RELAY_MAX_BYTES = 35 * 1024 * 1024; // stays under Resend's 40MB (post-base64) attachment cap with margin
 

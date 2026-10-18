@@ -3,7 +3,8 @@ main = "report-relay.js"
 compatibility_date = "2026-09-10"
 
 [vars]
-ALLOWED_ORIGIN = "https://hderek22.github.io"
+# Comma-separated; "*." entries cover Cloudflare Pages preview builds.
+ALLOWED_ORIGIN = "https://app.tlsprogressionreports.com, https://tls-initiatives.pages.dev, https://*.tls-initiatives.pages.dev, https://hderek22.github.io"
 FROM_ADDRESS = "Progression Report <reports@tlsprogressionreports.com>"
 
 # RESEND_API_KEY and RELAY_SHARED_SECRET are secrets, not vars — never put them
